@@ -165,28 +165,49 @@ export function useHydraStore() {
   const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
-    setWallet(readWallet());
     setCompleted(readCompleted());
     setHydrated(true);
-    const onStorage = () => {
-      setWallet(readWallet());
-      setCompleted(readCompleted());
+
+    let unsub: (() => void) | undefined;
+    let cancelled = false;
+
+    // Load RDT lazily on the client and subscribe to wallet state.
+    import("./radix").then(({ getRdt }) => {
+      if (cancelled) return;
+      const rdt = getRdt();
+      if (!rdt) return;
+      const sub = rdt.walletApi.walletData$.subscribe((data) => {
+        const addr = data?.accounts?.[0]?.address ?? null;
+        if (addr) {
+          localStorage.setItem(WALLET_KEY, addr);
+          setWallet(addr);
+        } else {
+          localStorage.removeItem(WALLET_KEY);
+          setWallet(null);
+        }
+      });
+      unsub = () => sub.unsubscribe();
+    });
+
+    return () => {
+      cancelled = true;
+      unsub?.();
     };
-    window.addEventListener("storage", onStorage);
-    return () => window.removeEventListener("storage", onStorage);
   }, []);
 
-  const connect = useCallback(() => {
-    // Mock Radix wallet connect: generate a plausible rdx1... address
-    const chars = "abcdefghijklmnopqrstuvwxyz0123456789";
-    let addr = "rdx1qsp";
-    for (let i = 0; i < 54; i++) addr += chars[Math.floor(Math.random() * chars.length)];
-    localStorage.setItem(WALLET_KEY, addr);
-    setWallet(addr);
-    return addr;
+  const connect = useCallback(async () => {
+    const { getRdt } = await import("./radix");
+    const rdt = getRdt();
+    if (!rdt) return null;
+    const result = await rdt.walletApi.sendRequest();
+    if (result.isErr()) return null;
+    return result.value?.accounts?.[0]?.address ?? null;
   }, []);
 
-  const disconnect = useCallback(() => {
+  const disconnect = useCallback(async () => {
+    const { getRdt } = await import("./radix");
+    const rdt = getRdt();
+    rdt?.disconnect();
     localStorage.removeItem(WALLET_KEY);
     setWallet(null);
   }, []);
