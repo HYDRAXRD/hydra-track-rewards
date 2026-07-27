@@ -1,0 +1,146 @@
+import { useState } from "react";
+import { ExternalLink, Check, Loader2, ShieldCheck } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { useHydraStore, type Task } from "@/lib/hydra-store";
+import { cn } from "@/lib/utils";
+
+export function TaskCard({ task }: { task: Task }) {
+  const { wallet, completed, completeTask } = useHydraStore();
+  const isDone = Boolean(completed[task.id]);
+  const [verifying, setVerifying] = useState(false);
+  const [visited, setVisited] = useState(false);
+  const [popup, setPopup] = useState(false);
+  const Icon = task.icon;
+
+  const status = isDone
+    ? "Completed"
+    : verifying
+      ? "Pending Verification"
+      : "Not Started";
+
+  const handleVerify = () => {
+    if (!wallet) return;
+    setVerifying(true);
+    // Placeholder verification — Radix Gateway API / X API / Battle Arena API
+    setTimeout(() => {
+      setVerifying(false);
+      completeTask(task.id);
+      setPopup(true);
+      setTimeout(() => setPopup(false), 1400);
+    }, 1200);
+  };
+
+  return (
+    <div
+      className={cn(
+        "relative glass-card rounded-2xl p-5 flex flex-col gap-4 transition-all",
+        isDone && "ring-1 ring-teal/50",
+      )}
+    >
+      {popup && (
+        <div className="pointer-events-none absolute right-4 top-4 reward-pop text-teal font-bold">
+          +{task.reward.toLocaleString()} $HYDR
+        </div>
+      )}
+
+      <div className="flex items-start justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <div
+            className={cn(
+              "grid h-11 w-11 place-items-center rounded-xl",
+              task.category === "social"
+                ? "bg-purple/20 text-purple"
+                : "bg-teal/20 text-teal",
+            )}
+            style={{
+              color: task.category === "social" ? "oklch(0.78 0.2 300)" : "oklch(0.85 0.15 195)",
+            }}
+          >
+            <Icon className="h-5 w-5" />
+          </div>
+          <div>
+            <h3 className="font-semibold leading-tight">{task.title}</h3>
+            <p className="text-xs text-muted-foreground uppercase tracking-wide mt-0.5">
+              {task.category === "social" ? "Social" : "On-chain"} · {task.verifyMode}
+            </p>
+          </div>
+        </div>
+        <Badge
+          className="border-0 text-xs font-semibold whitespace-nowrap"
+          style={{
+            background: "var(--gradient-brand)",
+            color: "white",
+          }}
+        >
+          +{task.reward.toLocaleString()} $HYDR
+        </Badge>
+      </div>
+
+      <p className="text-sm text-muted-foreground">{task.description}</p>
+
+      <div className="flex items-center justify-between mt-auto pt-2">
+        <span
+          className={cn(
+            "inline-flex items-center gap-1.5 text-xs font-medium",
+            isDone
+              ? "text-teal"
+              : verifying
+                ? "text-yellow-300"
+                : "text-muted-foreground",
+          )}
+        >
+          <span
+            className={cn(
+              "h-1.5 w-1.5 rounded-full",
+              isDone ? "bg-teal" : verifying ? "bg-yellow-300 animate-pulse" : "bg-muted-foreground",
+            )}
+          />
+          {status}
+        </span>
+
+        <div className="flex gap-2">
+          <Button asChild size="sm" variant="outline">
+            <a
+              href={task.link}
+              target="_blank"
+              rel="noreferrer noopener"
+              onClick={() => setVisited(true)}
+            >
+              Open <ExternalLink className="h-3.5 w-3.5" />
+            </a>
+          </Button>
+          {isDone ? (
+            <Button size="sm" disabled className="bg-teal/20 text-teal border-0">
+              <Check className="h-4 w-4" /> Done
+            </Button>
+          ) : (
+            <Button
+              size="sm"
+              onClick={handleVerify}
+              disabled={!wallet || verifying || (task.verifyMode === "manual" && !visited)}
+              className="btn-gradient btn-gradient-hover border-0"
+              title={
+                !wallet
+                  ? "Connect your wallet first"
+                  : task.verifyMode === "manual" && !visited
+                    ? "Open the link first"
+                    : ""
+              }
+            >
+              {verifying ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" /> Verifying
+                </>
+              ) : (
+                <>
+                  <ShieldCheck className="h-4 w-4" /> Verify
+                </>
+              )}
+            </Button>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
