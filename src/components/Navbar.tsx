@@ -1,7 +1,7 @@
 import { Link } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
 import { useHydraStore, shortAddr } from "@/lib/hydra-store";
-import { Wallet, LogOut, Droplets } from "lucide-react";
+import { Wallet, LogOut } from "lucide-react";
 import { useState } from "react";
 
 export function Navbar() {
