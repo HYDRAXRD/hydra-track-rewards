@@ -3,7 +3,7 @@ import { useHydraStore } from "@/lib/hydra-store";
 import { AlertCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-declare global {
+declare module "react" {
   namespace JSX {
     interface IntrinsicElements {
       "radix-connect-button": React.DetailedHTMLProps<
