@@ -1,72 +1,51 @@
-import { Button } from "@/components/ui/button";
-import { useHydraStore, shortAddr } from "@/lib/hydra-store";
-import { Wallet, LogOut, Loader2, AlertCircle } from "lucide-react";
+import { useEffect } from "react";
+import { useHydraStore } from "@/lib/hydra-store";
+import { AlertCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-type Size = "sm" | "default" | "lg";
+declare global {
+  namespace JSX {
+    interface IntrinsicElements {
+      "radix-connect-button": React.DetailedHTMLProps<
+        React.HTMLAttributes<HTMLElement>,
+        HTMLElement
+      >;
+    }
+  }
+}
 
 interface ConnectButtonProps {
-  size?: Size;
   className?: string;
-  showAddress?: boolean;
-  showDisconnect?: boolean;
   showError?: boolean;
   fullWidth?: boolean;
+  // legacy props kept for compatibility (ignored — styling is owned by Radix element)
+  size?: "sm" | "default" | "lg";
+  showAddress?: boolean;
+  showDisconnect?: boolean;
 }
 
 export function ConnectButton({
-  size = "default",
   className,
-  showAddress = true,
-  showDisconnect = true,
   showError = true,
   fullWidth = false,
 }: ConnectButtonProps) {
-  const { wallet, hydrated, connect, disconnect, connecting, connectError } =
-    useHydraStore();
+  const { connectError } = useHydraStore();
 
-  if (hydrated && wallet) {
-    return (
-      <div className={cn("flex items-center gap-2", fullWidth && "w-full justify-center", className)}>
-        {showAddress && (
-          <span className="inline-flex items-center gap-2 rounded-full border border-border bg-secondary/60 px-3 py-1.5 text-xs font-mono text-muted-foreground">
-            <span className="h-2 w-2 rounded-full bg-teal" />
-            {shortAddr(wallet)}
-          </span>
-        )}
-        {showDisconnect && (
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={disconnect}
-            title="Disconnect wallet"
-            aria-label="Disconnect wallet"
-          >
-            <LogOut className="h-4 w-4" />
-          </Button>
-        )}
-      </div>
-    );
-  }
+  // Ensure the Radix dApp Toolkit is initialized so the <radix-connect-button>
+  // custom element is registered by the toolkit.
+  useEffect(() => {
+    import("@/lib/radix").then(({ getRdt }) => getRdt()).catch(() => {});
+  }, []);
 
   return (
-    <div className={cn("flex flex-col gap-2", fullWidth && "w-full", className)}>
-      <Button
-        onClick={connect}
-        size={size}
-        disabled={connecting || !hydrated}
-        className={cn("btn-gradient btn-gradient-hover border-0", fullWidth && "w-full")}
-      >
-        {connecting ? (
-          <>
-            <Loader2 className="h-4 w-4 animate-spin" /> Connecting…
-          </>
-        ) : (
-          <>
-            <Wallet className="h-4 w-4" /> Connect Wallet
-          </>
-        )}
-      </Button>
+    <div
+      className={cn(
+        "flex flex-col gap-2",
+        fullWidth ? "w-full items-stretch" : "items-center",
+        className,
+      )}
+    >
+      <radix-connect-button />
       {showError && connectError && (
         <p className="inline-flex items-center gap-1.5 text-xs text-destructive">
           <AlertCircle className="h-3.5 w-3.5" />
