@@ -261,6 +261,8 @@ export function useHydraStore() {
     connect,
     disconnect,
     completeTask,
+    connecting,
+    connectError,
   };
 }
 
