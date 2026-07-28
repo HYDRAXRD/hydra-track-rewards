@@ -33,7 +33,7 @@ export const Route = createFileRoute("/")({
 });
 
 function Landing() {
-  const { wallet, connect, totalEarned, completedCount } = useHydraStore();
+  const { wallet, totalEarned, completedCount } = useHydraStore();
 
   return (
     <div>
