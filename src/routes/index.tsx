@@ -208,9 +208,7 @@ function Landing() {
               <Link to="/dashboard">Go to Dashboard <ArrowRight className="h-4 w-4" /></Link>
             </Button>
           ) : (
-            <Button size="lg" onClick={connect} className="btn-gradient btn-gradient-hover border-0">
-              <Wallet className="h-4 w-4" /> Connect Wallet
-            </Button>
+            <ConnectButton size="lg" />
           )}
           <Button asChild size="lg" variant="outline">
             <Link to="/leaderboard">View Leaderboard</Link>
