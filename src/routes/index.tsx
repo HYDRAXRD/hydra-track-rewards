@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { useHydraStore, TASKS, TOTAL_REWARDS, shortAddr } from "@/lib/hydra-store";
 import { ConnectButton } from "@/components/ConnectButton";
 import {
+  Wallet,
   Trophy,
   Sparkles,
   Zap,
