@@ -4,6 +4,7 @@ import {
   Instagram,
   Music2,
   Send,
+  Youtube,
   Heart,
   MessageCircle,
   Coins,
