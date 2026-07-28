@@ -35,7 +35,6 @@ export const Route = createFileRoute("/dashboard")({
 function Dashboard() {
   const {
     wallet,
-    connect,
     hydrated,
     totalEarned,
     completedCount,
