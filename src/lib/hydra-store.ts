@@ -154,7 +154,7 @@ export const TASKS: Task[] = [
 export const TOTAL_REWARDS = TASKS.reduce((s, t) => s + t.reward, 0);
 
 const WALLET_KEY = "hydratrack:wallet";
-const TASKS_KEY = "hydratrack:completed";
+const TASKS_KEY = "hydratrack:completed:v2";
 
 function readCompleted(): Record<string, number> {
   if (typeof window === "undefined") return {};
