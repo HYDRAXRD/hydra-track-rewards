@@ -1,7 +1,7 @@
 import { Link } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
 import { useHydraStore, shortAddr } from "@/lib/hydra-store";
-import { Wallet, LogOut, Droplets } from "lucide-react";
+import { Wallet, LogOut } from "lucide-react";
 import { useState } from "react";
 
 export function Navbar() {
@@ -12,9 +12,7 @@ export function Navbar() {
     <header className="sticky top-0 z-40 border-b border-border/40 backdrop-blur-xl bg-background/70">
       <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4">
         <Link to="/" className="flex items-center gap-2 font-bold text-lg">
-          <div className="grid h-9 w-9 place-items-center rounded-xl btn-gradient">
-            <Droplets className="h-5 w-5" />
-          </div>
+          <img src="/hydra-logo.png" alt="HydraTrack" className="h-9 w-9 rounded-xl object-contain" />
           <span className="gradient-text">HydraTrack</span>
         </Link>
 
