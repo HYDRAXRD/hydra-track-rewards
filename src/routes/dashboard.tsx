@@ -70,13 +70,9 @@ function Dashboard() {
             Your wallet address is your HydraTrack identity. Connect to start
             completing quests and earning $HYDR.
           </p>
-          <Button
-            size="lg"
-            onClick={connect}
-            className="mt-6 btn-gradient btn-gradient-hover border-0"
-          >
-            <Wallet className="h-4 w-4" /> Connect Wallet
-          </Button>
+          <div className="mt-6 flex justify-center">
+            <ConnectButton size="lg" />
+          </div>
         </div>
       </div>
     );
