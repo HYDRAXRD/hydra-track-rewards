@@ -3,6 +3,7 @@ import { useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { TaskCard } from "@/components/TaskCard";
+import { ConnectButton } from "@/components/ConnectButton";
 import {
   useHydraStore,
   TASKS,
@@ -34,7 +35,6 @@ export const Route = createFileRoute("/dashboard")({
 function Dashboard() {
   const {
     wallet,
-    connect,
     hydrated,
     totalEarned,
     completedCount,
@@ -70,13 +70,9 @@ function Dashboard() {
             Your wallet address is your HydraTrack identity. Connect to start
             completing quests and earning $HYDR.
           </p>
-          <Button
-            size="lg"
-            onClick={connect}
-            className="mt-6 btn-gradient btn-gradient-hover border-0"
-          >
-            <Wallet className="h-4 w-4" /> Connect Wallet
-          </Button>
+          <div className="mt-6 flex justify-center">
+            <ConnectButton size="lg" />
+          </div>
         </div>
       </div>
     );

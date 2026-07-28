@@ -163,6 +163,8 @@ export function useHydraStore() {
   const [wallet, setWallet] = useState<string | null>(null);
   const [completed, setCompleted] = useState<Record<string, number>>({});
   const [hydrated, setHydrated] = useState(false);
+  const [connecting, setConnecting] = useState(false);
+  const [connectError, setConnectError] = useState<string | null>(null);
 
   useEffect(() => {
     setCompleted(readCompleted());
@@ -171,7 +173,6 @@ export function useHydraStore() {
     let unsub: (() => void) | undefined;
     let cancelled = false;
 
-    // Load RDT lazily on the client and subscribe to wallet state.
     import("./radix").then(({ getRdt }) => {
       if (cancelled) return;
       const rdt = getRdt();
@@ -181,12 +182,16 @@ export function useHydraStore() {
         if (addr) {
           localStorage.setItem(WALLET_KEY, addr);
           setWallet(addr);
+          setConnectError(null);
         } else {
           localStorage.removeItem(WALLET_KEY);
           setWallet(null);
         }
       });
       unsub = () => sub.unsubscribe();
+    }).catch((e) => {
+      console.error("Failed to load Radix toolkit", e);
+      setConnectError("Wallet connector failed to load.");
     });
 
     return () => {
@@ -196,12 +201,28 @@ export function useHydraStore() {
   }, []);
 
   const connect = useCallback(async () => {
-    const { getRdt } = await import("./radix");
-    const rdt = getRdt();
-    if (!rdt) return null;
-    const result = await rdt.walletApi.sendRequest();
-    if (result.isErr()) return null;
-    return result.value?.accounts?.[0]?.address ?? null;
+    setConnecting(true);
+    setConnectError(null);
+    try {
+      const { getRdt } = await import("./radix");
+      const rdt = getRdt();
+      if (!rdt) {
+        setConnectError("Radix Wallet Connector unavailable in this environment.");
+        return null;
+      }
+      const result = await rdt.walletApi.sendRequest();
+      if (result.isErr()) {
+        const err = result.error as { error?: string; message?: string } | undefined;
+        setConnectError(err?.message || err?.error || "Wallet request was cancelled.");
+        return null;
+      }
+      return result.value?.accounts?.[0]?.address ?? null;
+    } catch (e: any) {
+      setConnectError(e?.message || "Could not connect to the Radix Wallet.");
+      return null;
+    } finally {
+      setConnecting(false);
+    }
   }, []);
 
   const disconnect = useCallback(async () => {
@@ -210,7 +231,9 @@ export function useHydraStore() {
     rdt?.disconnect();
     localStorage.removeItem(WALLET_KEY);
     setWallet(null);
+    setConnectError(null);
   }, []);
+
 
   const completeTask = useCallback((taskId: string) => {
     setCompleted((prev) => {
@@ -238,6 +261,8 @@ export function useHydraStore() {
     connect,
     disconnect,
     completeTask,
+    connecting,
+    connectError,
   };
 }
 
