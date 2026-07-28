@@ -289,14 +289,14 @@ export function shortAddr(a: string) {
 }
 
 export const LEADERBOARD_MOCK = [
-  { addr: "rdx1qsp7f8k…hydra01", hydr: 3850 },
-  { addr: "rdx1qsp2m9d…hydra02", hydr: 3400 },
-  { addr: "rdx1qsp8kx3…hydra03", hydr: 2950 },
-  { addr: "rdx1qsp5vv1…hydra04", hydr: 2700 },
-  { addr: "rdx1qsp9nnq…hydra05", hydr: 2300 },
-  { addr: "rdx1qspa42w…hydra06", hydr: 1850 },
-  { addr: "rdx1qspb31l…hydra07", hydr: 1500 },
-  { addr: "rdx1qspc77e…hydra08", hydr: 1200 },
-  { addr: "rdx1qspd55r…hydra09", hydr: 900 },
-  { addr: "rdx1qspe14y…hydra10", hydr: 650 },
+  { addr: "rdx1qsp7f8k…hydra01", hydr: 0 },
+  { addr: "rdx1qsp2m9d…hydra02", hydr: 0 },
+  { addr: "rdx1qsp8kx3…hydra03", hydr: 0 },
+  { addr: "rdx1qsp5vv1…hydra04", hydr: 0 },
+  { addr: "rdx1qsp9nnq…hydra05", hydr: 0 },
+  { addr: "rdx1qspa42w…hydra06", hydr: 0 },
+  { addr: "rdx1qspb31l…hydra07", hydr: 0 },
+  { addr: "rdx1qspc77e…hydra08", hydr: 0 },
+  { addr: "rdx1qspd55r…hydra09", hydr: 0 },
+  { addr: "rdx1qspe14y…hydra10", hydr: 0 },
 ];
