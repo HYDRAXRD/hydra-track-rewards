@@ -70,6 +70,16 @@ export const TASKS: Task[] = [
     verifyMode: "manual",
   },
   {
+    id: "yt-subscribe",
+    title: "Subscribe to HYDRA on YouTube",
+    description: "Subscribe to @HYDRAXRD on YouTube.",
+    link: "https://www.youtube.com/@HYDRAXRD",
+    reward: 100,
+    category: "social",
+    icon: Youtube,
+    verifyMode: "manual",
+  },
+  {
     id: "x-like-share",
     title: "Like & Share pinned X post",
     description: "Like and repost the pinned HYDRA announcement on X.",
