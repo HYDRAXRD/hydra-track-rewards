@@ -34,24 +34,8 @@ export function Navbar() {
         </nav>
 
         <div className="flex items-center gap-2">
-          {hydrated && wallet ? (
-            <div className="flex items-center gap-2">
-              <span className="hidden sm:inline-flex items-center gap-2 rounded-full border border-border bg-secondary/60 px-3 py-1.5 text-xs font-mono text-muted-foreground">
-                <span className="h-2 w-2 rounded-full bg-teal" />
-                {shortAddr(wallet)}
-              </span>
-              <Button variant="ghost" size="icon" onClick={disconnect} title="Disconnect">
-                <LogOut className="h-4 w-4" />
-              </Button>
-            </div>
-          ) : (
-            <Button
-              onClick={connect}
-              className="btn-gradient btn-gradient-hover border-0"
-            >
-              <Wallet className="h-4 w-4" /> Connect Wallet
-            </Button>
-          )}
+          <ConnectButton />
+
           <button
             className="md:hidden p-2 rounded-md hover:bg-secondary"
             onClick={() => setOpen((v) => !v)}
