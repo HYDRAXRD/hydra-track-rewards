@@ -1,4 +1,4 @@
-import { Twitter, Instagram, Music2, Send, Globe, Droplets } from "lucide-react";
+import { Twitter, Instagram, Music2, Send, Globe } from "lucide-react";
 
 const socials = [
   { href: "https://x.com/hydraxrd", label: "X", icon: Twitter },
