@@ -1,12 +1,10 @@
 import { Link } from "@tanstack/react-router";
-import { Button } from "@/components/ui/button";
-import { useHydraStore, shortAddr } from "@/lib/hydra-store";
-import { Wallet, LogOut } from "lucide-react";
+import { ConnectButton } from "@/components/ConnectButton";
 import { useState } from "react";
 
 export function Navbar() {
-  const { wallet, connect, disconnect, hydrated } = useHydraStore();
   const [open, setOpen] = useState(false);
+
 
   return (
     <header className="sticky top-0 z-40 border-b border-border/40 backdrop-blur-xl bg-background/70">
