@@ -12,6 +12,8 @@ export function TaskCard({ task }: { task: Task }) {
   const pendingSub = pending?.[task.id];
   const isPending = Boolean(pendingSub) && !isDone;
   const isSocialManual = task.category === "social" && task.verifyMode === "manual";
+  const isOnchain = task.category === "onchain";
+  const needsInput = isSocialManual || isOnchain;
 
   const [submitting, setSubmitting] = useState(false);
   const [visited, setVisited] = useState(false);
