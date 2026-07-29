@@ -7,10 +7,11 @@ export const getRouter = () => {
 
   const router = createRouter({
     routeTree,
+    basepath: "/track",
     context: { queryClient },
     scrollRestoration: true,
     defaultPreloadStaleTime: 0,
-    });
+  });
 
   return router;
 };
