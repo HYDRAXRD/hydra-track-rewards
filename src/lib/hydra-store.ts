@@ -112,8 +112,10 @@ export const TASKS: Task[] = [
     category: "social",
     icon: MessageCircle,
     verifyMode: "manual",
-
+    profileLabel: "Link to your comment",
+    profilePlaceholder: "https://x.com/yourhandle/status/...",
   },
+
   {
     id: "buy-hydr",
     title: "Buy 1,000,000 $HYDR",
