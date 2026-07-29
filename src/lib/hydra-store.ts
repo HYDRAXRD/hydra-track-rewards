@@ -155,6 +155,12 @@ export const TOTAL_REWARDS = TASKS.reduce((s, t) => s + t.reward, 0);
 
 const WALLET_KEY = "hydratrack:wallet";
 const TASKS_KEY = "hydratrack:completed:v2";
+const PENDING_KEY = "hydratrack:pending:v1";
+
+export interface PendingSubmission {
+  handle: string;
+  at: number;
+}
 
 function readCompleted(): Record<string, number> {
   if (typeof window === "undefined") return {};
@@ -165,10 +171,20 @@ function readCompleted(): Record<string, number> {
   }
 }
 
+function readPending(): Record<string, PendingSubmission> {
+  if (typeof window === "undefined") return {};
+  try {
+    return JSON.parse(localStorage.getItem(PENDING_KEY) || "{}");
+  } catch {
+    return {};
+  }
+}
+
 function readWallet(): string | null {
   if (typeof window === "undefined") return null;
   return localStorage.getItem(WALLET_KEY);
 }
+
 
 export function useHydraStore() {
   const [wallet, setWallet] = useState<string | null>(null);
