@@ -31,7 +31,7 @@ export function TaskCard({ task }: { task: Task }) {
 
   const handleSubmit = () => {
     if (!wallet) return;
-    if (isSocialManual) {
+    if (needsInput) {
       const value = handle.trim();
       if (!value) return;
       setSubmitting(true);
@@ -43,7 +43,7 @@ export function TaskCard({ task }: { task: Task }) {
       }, 600);
       return;
     }
-    // On-chain / API tasks — placeholder verification auto-completes
+    // Fallback: auto-complete
     setSubmitting(true);
     setTimeout(() => {
       setSubmitting(false);
