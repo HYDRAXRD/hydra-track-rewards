@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { ExternalLink, Check, Loader2, ShieldCheck, Clock } from "lucide-react";
+import { useState, useRef } from "react";
+import { ExternalLink, Check, Loader2, ShieldCheck, Clock, Upload, ImageIcon, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -18,7 +18,10 @@ export function TaskCard({ task }: { task: Task }) {
   const [submitting, setSubmitting] = useState(false);
   const [visited, setVisited] = useState(false);
   const [handle, setHandle] = useState("");
+  const [screenshot, setScreenshot] = useState<string | undefined>(undefined);
+  const [screenshotName, setScreenshotName] = useState("");
   const [popup, setPopup] = useState<null | "pending" | "done">(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const Icon = task.icon;
 
   const status = isDone
@@ -29,21 +32,37 @@ export function TaskCard({ task }: { task: Task }) {
         ? "Submitting"
         : "Not Started";
 
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setScreenshotName(file.name);
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      setScreenshot(ev.target?.result as string);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const clearScreenshot = () => {
+    setScreenshot(undefined);
+    setScreenshotName("");
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  };
+
   const handleSubmit = () => {
     if (!wallet) return;
     if (needsInput) {
-      const value = handle.trim();
-      if (!value) return;
+      if (isOnchain && !screenshot) return;
+      if (isSocialManual && !handle.trim()) return;
       setSubmitting(true);
       setTimeout(() => {
-        submitForReview(task.id, value);
+        submitForReview(task.id, isOnchain ? (screenshotName || "screenshot") : handle.trim(), screenshot);
         setSubmitting(false);
         setPopup("pending");
         setTimeout(() => setPopup(null), 1600);
       }, 600);
       return;
     }
-    // Fallback: auto-complete
     setSubmitting(true);
     setTimeout(() => {
       setSubmitting(false);
@@ -52,6 +71,12 @@ export function TaskCard({ task }: { task: Task }) {
       setTimeout(() => setPopup(null), 1400);
     }, 1200);
   };
+
+  const canSubmit = wallet && !submitting && (
+    isOnchain ? Boolean(screenshot) :
+    isSocialManual ? Boolean(handle.trim()) :
+    (task.verifyMode !== "manual" || visited)
+  );
 
   return (
     <div
@@ -107,27 +132,84 @@ export function TaskCard({ task }: { task: Task }) {
 
       <p className="text-sm text-muted-foreground">{task.description}</p>
 
-      {needsInput && !isDone && (
+      {/* Social tasks: text input for handle */}
+      {isSocialManual && !isDone && (
         <div className="flex flex-col gap-1.5">
           <label className="text-xs text-muted-foreground">
-            {isOnchain
-              ? "Transaction ID (txid)"
-              : (task.profileLabel ?? "Your profile")}
+            {task.profileLabel ?? "Your profile"}
           </label>
           <Input
             value={isPending ? pendingSub!.handle : handle}
             onChange={(e) => setHandle(e.target.value)}
-            placeholder={
-              isOnchain
-                ? "txid_rdx1..."
-                : (task.profilePlaceholder ?? "@yourhandle")
-            }
+            placeholder={task.profilePlaceholder ?? "@yourhandle"}
             disabled={isPending || submitting || !wallet}
             className="bg-background/60"
           />
           {isPending && (
             <p className="text-[11px] text-yellow-300/90">
               Submitted for manual review · reward credited once approved
+            </p>
+          )}
+        </div>
+      )}
+
+      {/* Onchain tasks: screenshot upload */}
+      {isOnchain && !isDone && (
+        <div className="flex flex-col gap-1.5">
+          <label className="text-xs text-muted-foreground">
+            Screenshot of system access & wallet connection
+          </label>
+          {isPending && pendingSub?.screenshot ? (
+            <div className="flex items-center gap-2 rounded-lg bg-yellow-300/10 border border-yellow-300/30 p-2">
+              <ImageIcon className="h-4 w-4 text-yellow-300 shrink-0" />
+              <span className="text-xs text-yellow-300/90 truncate">{pendingSub.handle}</span>
+            </div>
+          ) : !isPending ? (
+            <>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={handleFileChange}
+                disabled={submitting || !wallet}
+              />
+              {screenshot ? (
+                <div className="relative rounded-lg overflow-hidden border border-teal/30">
+                  <img src={screenshot} alt="Screenshot preview" className="w-full max-h-40 object-cover" />
+                  <button
+                    onClick={clearScreenshot}
+                    className="absolute top-1 right-1 rounded-full bg-black/70 p-1 hover:bg-black"
+                  >
+                    <X className="h-3 w-3 text-white" />
+                  </button>
+                  <div className="absolute bottom-0 left-0 right-0 bg-black/60 px-2 py-1">
+                    <p className="text-[11px] text-white/80 truncate">{screenshotName}</p>
+                  </div>
+                </div>
+              ) : (
+                <button
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={submitting || !wallet}
+                  className={cn(
+                    "flex flex-col items-center gap-2 rounded-lg border-2 border-dashed p-4 transition-colors",
+                    wallet
+                      ? "border-teal/40 hover:border-teal/70 cursor-pointer"
+                      : "border-muted/30 cursor-not-allowed opacity-50"
+                  )}
+                >
+                  <Upload className="h-6 w-6 text-teal/60" />
+                  <span className="text-xs text-muted-foreground text-center">
+                    Click to upload a screenshot<br />
+                    <span className="text-teal/70">showing system access &amp; wallet connected</span>
+                  </span>
+                </button>
+              )}
+            </>
+          ) : null}
+          {isPending && (
+            <p className="text-[11px] text-yellow-300/90">
+              Screenshot submitted · reward credited once approved by admin
             </p>
           )}
         </div>
@@ -180,24 +262,18 @@ export function TaskCard({ task }: { task: Task }) {
             <Button
               size="sm"
               onClick={handleSubmit}
-              disabled={
-                !wallet ||
-                submitting ||
-                (needsInput
-                  ? !handle.trim()
-                  : task.verifyMode === "manual" && !visited)
-              }
+              disabled={!canSubmit}
               className="btn-gradient btn-gradient-hover border-0"
               title={
                 !wallet
                   ? "Connect your wallet first"
-                  : needsInput && !handle.trim()
-                    ? isOnchain
-                      ? "Paste the transaction ID (txid) to submit"
-                      : "Enter your profile to submit"
-                    : task.verifyMode === "manual" && !visited
-                      ? "Open the link first"
-                      : ""
+                  : isOnchain && !screenshot
+                    ? "Upload a screenshot to submit"
+                    : isSocialManual && !handle.trim()
+                      ? "Enter your profile to submit"
+                      : task.verifyMode === "manual" && !visited
+                        ? "Open the link first"
+                        : ""
               }
             >
               {submitting ? (

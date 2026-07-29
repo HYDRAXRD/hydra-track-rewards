@@ -158,13 +158,32 @@ export const TASKS: Task[] = [
 
 export const TOTAL_REWARDS = TASKS.reduce((s, t) => s + t.reward, 0);
 
+// Admin wallet address - only this wallet can access the admin panel
+export const ADMIN_WALLET = "account_rdx129mjzn6j04zy5c7jq447y6r60485z7sd3zvqxah0jfv70k36en8vt9";
+
+// HYDR token resource address on Radix mainnet
+export const HYDR_RESOURCE_ADDRESS = "resource_rdx1t4upr78guuapv5ept7d7ptekk9mqhy605zgms33mcszen8l9fac8vf";
+
 const WALLET_KEY = "hydratrack:wallet";
 const TASKS_KEY = "hydratrack:completed:v2";
-const PENDING_KEY = "hydratrack:pending:v1";
+const PENDING_KEY = "hydratrack:pending:v2";
+const ADMIN_SUBMISSIONS_KEY = "hydratrack:adminsubmissions:v1";
 
 export interface PendingSubmission {
   handle: string;
+  screenshot?: string; // base64 data URL for screenshot
   at: number;
+  walletAddress: string;
+}
+
+export interface AdminSubmission {
+  walletAddress: string;
+  taskId: string;
+  handle: string;
+  screenshot?: string;
+  at: number;
+  status: "pending" | "approved" | "rejected";
+  approvedAt?: number;
 }
 
 function readCompleted(): Record<string, number> {
@@ -190,6 +209,19 @@ function readWallet(): string | null {
   return localStorage.getItem(WALLET_KEY);
 }
 
+export function readAdminSubmissions(): AdminSubmission[] {
+  if (typeof window === "undefined") return [];
+  try {
+    return JSON.parse(localStorage.getItem(ADMIN_SUBMISSIONS_KEY) || "[]");
+  } catch {
+    return [];
+  }
+}
+
+export function saveAdminSubmissions(subs: AdminSubmission[]) {
+  if (typeof window === "undefined") return;
+  localStorage.setItem(ADMIN_SUBMISSIONS_KEY, JSON.stringify(subs));
+}
 
 export function useHydraStore() {
   const [wallet, setWallet] = useState<string | null>(null);
@@ -199,11 +231,12 @@ export function useHydraStore() {
   const [connecting, setConnecting] = useState(false);
   const [connectError, setConnectError] = useState<string | null>(null);
 
+  const isAdmin = wallet === ADMIN_WALLET;
+
   useEffect(() => {
     setCompleted(readCompleted());
     setPending(readPending());
     setHydrated(true);
-
 
     let unsub: (() => void) | undefined;
     let cancelled = false;
@@ -269,7 +302,6 @@ export function useHydraStore() {
     setConnectError(null);
   }, []);
 
-
   const completeTask = useCallback((taskId: string) => {
     setCompleted((prev) => {
       if (prev[taskId]) return prev;
@@ -286,13 +318,32 @@ export function useHydraStore() {
     });
   }, []);
 
-  const submitForReview = useCallback((taskId: string, handle: string) => {
+  const submitForReview = useCallback((taskId: string, handle: string, screenshot?: string) => {
+    if (!wallet) return;
+    // Save to pending (user state)
     setPending((prev) => {
-      const next = { ...prev, [taskId]: { handle, at: Date.now() } };
+      const next = { ...prev, [taskId]: { handle, screenshot, at: Date.now(), walletAddress: wallet } };
       localStorage.setItem(PENDING_KEY, JSON.stringify(next));
       return next;
     });
-  }, []);
+    // Also save to admin submissions list
+    const allSubs = readAdminSubmissions();
+    const existingIdx = allSubs.findIndex(s => s.walletAddress === wallet && s.taskId === taskId);
+    const newSub: AdminSubmission = {
+      walletAddress: wallet,
+      taskId,
+      handle,
+      screenshot,
+      at: Date.now(),
+      status: "pending",
+    };
+    if (existingIdx >= 0) {
+      allSubs[existingIdx] = newSub;
+    } else {
+      allSubs.push(newSub);
+    }
+    saveAdminSubmissions(allSubs);
+  }, [wallet]);
 
   const totalEarned = TASKS.filter((t) => completed[t.id]).reduce(
     (s, t) => s + t.reward,
@@ -317,6 +368,7 @@ export function useHydraStore() {
     submitForReview,
     connecting,
     connectError,
+    isAdmin,
   };
 }
 
