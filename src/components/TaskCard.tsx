@@ -107,15 +107,21 @@ export function TaskCard({ task }: { task: Task }) {
 
       <p className="text-sm text-muted-foreground">{task.description}</p>
 
-      {isSocialManual && !isDone && (
+      {needsInput && !isDone && (
         <div className="flex flex-col gap-1.5">
           <label className="text-xs text-muted-foreground">
-            {task.profileLabel ?? "Your profile"}
+            {isOnchain
+              ? "Transaction ID (txid)"
+              : (task.profileLabel ?? "Your profile")}
           </label>
           <Input
             value={isPending ? pendingSub!.handle : handle}
             onChange={(e) => setHandle(e.target.value)}
-            placeholder={task.profilePlaceholder ?? "@yourhandle"}
+            placeholder={
+              isOnchain
+                ? "txid_rdx1..."
+                : (task.profilePlaceholder ?? "@yourhandle")
+            }
             disabled={isPending || submitting || !wallet}
             className="bg-background/60"
           />
