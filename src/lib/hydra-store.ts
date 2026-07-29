@@ -272,6 +272,21 @@ export function useHydraStore() {
       localStorage.setItem(TASKS_KEY, JSON.stringify(next));
       return next;
     });
+    setPending((prev) => {
+      if (!prev[taskId]) return prev;
+      const next = { ...prev };
+      delete next[taskId];
+      localStorage.setItem(PENDING_KEY, JSON.stringify(next));
+      return next;
+    });
+  }, []);
+
+  const submitForReview = useCallback((taskId: string, handle: string) => {
+    setPending((prev) => {
+      const next = { ...prev, [taskId]: { handle, at: Date.now() } };
+      localStorage.setItem(PENDING_KEY, JSON.stringify(next));
+      return next;
+    });
   }, []);
 
   const totalEarned = TASKS.filter((t) => completed[t.id]).reduce(
@@ -279,22 +294,27 @@ export function useHydraStore() {
     0,
   );
   const completedCount = Object.keys(completed).length;
+  const pendingCount = Object.keys(pending).filter((id) => !completed[id]).length;
   const progress = Math.round((totalEarned / TOTAL_REWARDS) * 100);
 
   return {
     wallet,
     hydrated,
     completed,
+    pending,
     totalEarned,
     completedCount,
+    pendingCount,
     progress,
     connect,
     disconnect,
     completeTask,
+    submitForReview,
     connecting,
     connectError,
   };
 }
+
 
 export function tierFor(hydr: number): { name: string; color: string; next?: number } {
   if (hydr >= 3000) return { name: "Gold", color: "text-yellow-300" };
