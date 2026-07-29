@@ -12,6 +12,8 @@ export function TaskCard({ task }: { task: Task }) {
   const pendingSub = pending?.[task.id];
   const isPending = Boolean(pendingSub) && !isDone;
   const isSocialManual = task.category === "social" && task.verifyMode === "manual";
+  const isOnchain = task.category === "onchain";
+  const needsInput = isSocialManual || isOnchain;
 
   const [submitting, setSubmitting] = useState(false);
   const [visited, setVisited] = useState(false);
@@ -29,7 +31,7 @@ export function TaskCard({ task }: { task: Task }) {
 
   const handleSubmit = () => {
     if (!wallet) return;
-    if (isSocialManual) {
+    if (needsInput) {
       const value = handle.trim();
       if (!value) return;
       setSubmitting(true);
@@ -41,7 +43,7 @@ export function TaskCard({ task }: { task: Task }) {
       }, 600);
       return;
     }
-    // On-chain / API tasks — placeholder verification auto-completes
+    // Fallback: auto-complete
     setSubmitting(true);
     setTimeout(() => {
       setSubmitting(false);
@@ -105,15 +107,21 @@ export function TaskCard({ task }: { task: Task }) {
 
       <p className="text-sm text-muted-foreground">{task.description}</p>
 
-      {isSocialManual && !isDone && (
+      {needsInput && !isDone && (
         <div className="flex flex-col gap-1.5">
           <label className="text-xs text-muted-foreground">
-            {task.profileLabel ?? "Your profile"}
+            {isOnchain
+              ? "Transaction ID (txid)"
+              : (task.profileLabel ?? "Your profile")}
           </label>
           <Input
             value={isPending ? pendingSub!.handle : handle}
             onChange={(e) => setHandle(e.target.value)}
-            placeholder={task.profilePlaceholder ?? "@yourhandle"}
+            placeholder={
+              isOnchain
+                ? "txid_rdx1..."
+                : (task.profilePlaceholder ?? "@yourhandle")
+            }
             disabled={isPending || submitting || !wallet}
             className="bg-background/60"
           />
@@ -175,14 +183,18 @@ export function TaskCard({ task }: { task: Task }) {
               disabled={
                 !wallet ||
                 submitting ||
-                (isSocialManual ? !handle.trim() : task.verifyMode === "manual" && !visited)
+                (needsInput
+                  ? !handle.trim()
+                  : task.verifyMode === "manual" && !visited)
               }
               className="btn-gradient btn-gradient-hover border-0"
               title={
                 !wallet
                   ? "Connect your wallet first"
-                  : isSocialManual && !handle.trim()
-                    ? "Enter your profile to submit"
+                  : needsInput && !handle.trim()
+                    ? isOnchain
+                      ? "Paste the transaction ID (txid) to submit"
+                      : "Enter your profile to submit"
                     : task.verifyMode === "manual" && !visited
                       ? "Open the link first"
                       : ""
@@ -191,9 +203,9 @@ export function TaskCard({ task }: { task: Task }) {
               {submitting ? (
                 <>
                   <Loader2 className="h-4 w-4 animate-spin" />
-                  {isSocialManual ? "Submitting" : "Verifying"}
+                  {needsInput ? "Submitting" : "Verifying"}
                 </>
-              ) : isSocialManual ? (
+              ) : needsInput ? (
                 <>
                   <ShieldCheck className="h-4 w-4" /> Submit for review
                 </>
