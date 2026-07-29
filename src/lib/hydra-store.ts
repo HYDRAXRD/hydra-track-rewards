@@ -189,13 +189,16 @@ function readWallet(): string | null {
 export function useHydraStore() {
   const [wallet, setWallet] = useState<string | null>(null);
   const [completed, setCompleted] = useState<Record<string, number>>({});
+  const [pending, setPending] = useState<Record<string, PendingSubmission>>({});
   const [hydrated, setHydrated] = useState(false);
   const [connecting, setConnecting] = useState(false);
   const [connectError, setConnectError] = useState<string | null>(null);
 
   useEffect(() => {
     setCompleted(readCompleted());
+    setPending(readPending());
     setHydrated(true);
+
 
     let unsub: (() => void) | undefined;
     let cancelled = false;
