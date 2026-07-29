@@ -26,6 +26,8 @@ export interface Task {
   category: TaskCategory;
   icon: LucideIcon;
   verifyMode: "manual" | "onchain" | "api";
+  profileLabel?: string;
+  profilePlaceholder?: string;
 }
 
 export const TASKS: Task[] = [
@@ -38,6 +40,8 @@ export const TASKS: Task[] = [
     category: "social",
     icon: Twitter,
     verifyMode: "manual",
+    profileLabel: "Your X (Twitter) profile",
+    profilePlaceholder: "@yourhandle or https://x.com/yourhandle",
   },
   {
     id: "ig-follow",
@@ -48,6 +52,8 @@ export const TASKS: Task[] = [
     category: "social",
     icon: Instagram,
     verifyMode: "manual",
+    profileLabel: "Your Instagram profile",
+    profilePlaceholder: "@yourhandle or https://instagram.com/yourhandle",
   },
   {
     id: "tt-follow",
@@ -58,6 +64,8 @@ export const TASKS: Task[] = [
     category: "social",
     icon: Music2,
     verifyMode: "manual",
+    profileLabel: "Your TikTok profile",
+    profilePlaceholder: "@yourhandle or https://tiktok.com/@yourhandle",
   },
   {
     id: "tg-join",
@@ -68,6 +76,8 @@ export const TASKS: Task[] = [
     category: "social",
     icon: Send,
     verifyMode: "manual",
+    profileLabel: "Your Telegram username",
+    profilePlaceholder: "@yourusername",
   },
   {
     id: "yt-subscribe",
@@ -78,6 +88,8 @@ export const TASKS: Task[] = [
     category: "social",
     icon: Youtube,
     verifyMode: "manual",
+    profileLabel: "Your YouTube channel",
+    profilePlaceholder: "@yourchannel or channel URL",
   },
   {
     id: "x-like-share",
@@ -88,6 +100,8 @@ export const TASKS: Task[] = [
     category: "social",
     icon: Heart,
     verifyMode: "manual",
+    profileLabel: "Link to your repost",
+    profilePlaceholder: "https://x.com/yourhandle/status/...",
   },
   {
     id: "x-comment",
@@ -98,7 +112,10 @@ export const TASKS: Task[] = [
     category: "social",
     icon: MessageCircle,
     verifyMode: "manual",
+    profileLabel: "Link to your comment",
+    profilePlaceholder: "https://x.com/yourhandle/status/...",
   },
+
   {
     id: "buy-hydr",
     title: "Buy 1,000,000 $HYDR",
@@ -155,6 +172,12 @@ export const TOTAL_REWARDS = TASKS.reduce((s, t) => s + t.reward, 0);
 
 const WALLET_KEY = "hydratrack:wallet";
 const TASKS_KEY = "hydratrack:completed:v2";
+const PENDING_KEY = "hydratrack:pending:v1";
+
+export interface PendingSubmission {
+  handle: string;
+  at: number;
+}
 
 function readCompleted(): Record<string, number> {
   if (typeof window === "undefined") return {};
@@ -165,21 +188,34 @@ function readCompleted(): Record<string, number> {
   }
 }
 
+function readPending(): Record<string, PendingSubmission> {
+  if (typeof window === "undefined") return {};
+  try {
+    return JSON.parse(localStorage.getItem(PENDING_KEY) || "{}");
+  } catch {
+    return {};
+  }
+}
+
 function readWallet(): string | null {
   if (typeof window === "undefined") return null;
   return localStorage.getItem(WALLET_KEY);
 }
 
+
 export function useHydraStore() {
   const [wallet, setWallet] = useState<string | null>(null);
   const [completed, setCompleted] = useState<Record<string, number>>({});
+  const [pending, setPending] = useState<Record<string, PendingSubmission>>({});
   const [hydrated, setHydrated] = useState(false);
   const [connecting, setConnecting] = useState(false);
   const [connectError, setConnectError] = useState<string | null>(null);
 
   useEffect(() => {
     setCompleted(readCompleted());
+    setPending(readPending());
     setHydrated(true);
+
 
     let unsub: (() => void) | undefined;
     let cancelled = false;
@@ -253,6 +289,21 @@ export function useHydraStore() {
       localStorage.setItem(TASKS_KEY, JSON.stringify(next));
       return next;
     });
+    setPending((prev) => {
+      if (!prev[taskId]) return prev;
+      const next = { ...prev };
+      delete next[taskId];
+      localStorage.setItem(PENDING_KEY, JSON.stringify(next));
+      return next;
+    });
+  }, []);
+
+  const submitForReview = useCallback((taskId: string, handle: string) => {
+    setPending((prev) => {
+      const next = { ...prev, [taskId]: { handle, at: Date.now() } };
+      localStorage.setItem(PENDING_KEY, JSON.stringify(next));
+      return next;
+    });
   }, []);
 
   const totalEarned = TASKS.filter((t) => completed[t.id]).reduce(
@@ -260,22 +311,27 @@ export function useHydraStore() {
     0,
   );
   const completedCount = Object.keys(completed).length;
+  const pendingCount = Object.keys(pending).filter((id) => !completed[id]).length;
   const progress = Math.round((totalEarned / TOTAL_REWARDS) * 100);
 
   return {
     wallet,
     hydrated,
     completed,
+    pending,
     totalEarned,
     completedCount,
+    pendingCount,
     progress,
     connect,
     disconnect,
     completeTask,
+    submitForReview,
     connecting,
     connectError,
   };
 }
+
 
 export function tierFor(hydr: number): { name: string; color: string; next?: number } {
   if (hydr >= 3000) return { name: "Gold", color: "text-yellow-300" };

@@ -1,33 +1,53 @@
 import { useState } from "react";
-import { ExternalLink, Check, Loader2, ShieldCheck } from "lucide-react";
+import { ExternalLink, Check, Loader2, ShieldCheck, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
 import { useHydraStore, type Task } from "@/lib/hydra-store";
 import { cn } from "@/lib/utils";
 
 export function TaskCard({ task }: { task: Task }) {
-  const { wallet, completed, completeTask } = useHydraStore();
+  const { wallet, completed, pending, completeTask, submitForReview } = useHydraStore();
   const isDone = Boolean(completed[task.id]);
-  const [verifying, setVerifying] = useState(false);
+  const pendingSub = pending?.[task.id];
+  const isPending = Boolean(pendingSub) && !isDone;
+  const isSocialManual = task.category === "social" && task.verifyMode === "manual";
+
+  const [submitting, setSubmitting] = useState(false);
   const [visited, setVisited] = useState(false);
-  const [popup, setPopup] = useState(false);
+  const [handle, setHandle] = useState("");
+  const [popup, setPopup] = useState<null | "pending" | "done">(null);
   const Icon = task.icon;
 
   const status = isDone
     ? "Completed"
-    : verifying
-      ? "Pending Verification"
-      : "Not Started";
+    : isPending
+      ? "Pending manual review"
+      : submitting
+        ? "Submitting"
+        : "Not Started";
 
-  const handleVerify = () => {
+  const handleSubmit = () => {
     if (!wallet) return;
-    setVerifying(true);
-    // Placeholder verification — Radix Gateway API / X API / Battle Arena API
+    if (isSocialManual) {
+      const value = handle.trim();
+      if (!value) return;
+      setSubmitting(true);
+      setTimeout(() => {
+        submitForReview(task.id, value);
+        setSubmitting(false);
+        setPopup("pending");
+        setTimeout(() => setPopup(null), 1600);
+      }, 600);
+      return;
+    }
+    // On-chain / API tasks — placeholder verification auto-completes
+    setSubmitting(true);
     setTimeout(() => {
-      setVerifying(false);
+      setSubmitting(false);
       completeTask(task.id);
-      setPopup(true);
-      setTimeout(() => setPopup(false), 1400);
+      setPopup("done");
+      setTimeout(() => setPopup(null), 1400);
     }, 1200);
   };
 
@@ -36,11 +56,17 @@ export function TaskCard({ task }: { task: Task }) {
       className={cn(
         "relative glass-card rounded-2xl p-5 flex flex-col gap-4 transition-all",
         isDone && "ring-1 ring-teal/50",
+        isPending && "ring-1 ring-yellow-300/50",
       )}
     >
-      {popup && (
+      {popup === "done" && (
         <div className="pointer-events-none absolute right-4 top-4 reward-pop text-teal font-bold">
           +{task.reward.toLocaleString()} $HYDR
+        </div>
+      )}
+      {popup === "pending" && (
+        <div className="pointer-events-none absolute right-4 top-4 reward-pop text-yellow-300 font-semibold text-sm">
+          Sent for review
         </div>
       )}
 
@@ -79,13 +105,33 @@ export function TaskCard({ task }: { task: Task }) {
 
       <p className="text-sm text-muted-foreground">{task.description}</p>
 
+      {isSocialManual && !isDone && (
+        <div className="flex flex-col gap-1.5">
+          <label className="text-xs text-muted-foreground">
+            {task.profileLabel ?? "Your profile"}
+          </label>
+          <Input
+            value={isPending ? pendingSub!.handle : handle}
+            onChange={(e) => setHandle(e.target.value)}
+            placeholder={task.profilePlaceholder ?? "@yourhandle"}
+            disabled={isPending || submitting || !wallet}
+            className="bg-background/60"
+          />
+          {isPending && (
+            <p className="text-[11px] text-yellow-300/90">
+              Submitted for manual review · reward credited once approved
+            </p>
+          )}
+        </div>
+      )}
+
       <div className="flex items-center justify-between mt-auto pt-2">
         <span
           className={cn(
             "inline-flex items-center gap-1.5 text-xs font-medium",
             isDone
               ? "text-teal"
-              : verifying
+              : isPending || submitting
                 ? "text-yellow-300"
                 : "text-muted-foreground",
           )}
@@ -93,7 +139,11 @@ export function TaskCard({ task }: { task: Task }) {
           <span
             className={cn(
               "h-1.5 w-1.5 rounded-full",
-              isDone ? "bg-teal" : verifying ? "bg-yellow-300 animate-pulse" : "bg-muted-foreground",
+              isDone
+                ? "bg-teal"
+                : isPending || submitting
+                  ? "bg-yellow-300 animate-pulse"
+                  : "bg-muted-foreground",
             )}
           />
           {status}
@@ -114,23 +164,38 @@ export function TaskCard({ task }: { task: Task }) {
             <Button size="sm" disabled className="bg-teal/20 text-teal border-0">
               <Check className="h-4 w-4" /> Done
             </Button>
+          ) : isPending ? (
+            <Button size="sm" disabled className="bg-yellow-300/20 text-yellow-300 border-0">
+              <Clock className="h-4 w-4" /> Pending
+            </Button>
           ) : (
             <Button
               size="sm"
-              onClick={handleVerify}
-              disabled={!wallet || verifying || (task.verifyMode === "manual" && !visited)}
+              onClick={handleSubmit}
+              disabled={
+                !wallet ||
+                submitting ||
+                (isSocialManual ? !handle.trim() : task.verifyMode === "manual" && !visited)
+              }
               className="btn-gradient btn-gradient-hover border-0"
               title={
                 !wallet
                   ? "Connect your wallet first"
-                  : task.verifyMode === "manual" && !visited
-                    ? "Open the link first"
-                    : ""
+                  : isSocialManual && !handle.trim()
+                    ? "Enter your profile to submit"
+                    : task.verifyMode === "manual" && !visited
+                      ? "Open the link first"
+                      : ""
               }
             >
-              {verifying ? (
+              {submitting ? (
                 <>
-                  <Loader2 className="h-4 w-4 animate-spin" /> Verifying
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  {isSocialManual ? "Submitting" : "Verifying"}
+                </>
+              ) : isSocialManual ? (
+                <>
+                  <ShieldCheck className="h-4 w-4" /> Submit for review
                 </>
               ) : (
                 <>
