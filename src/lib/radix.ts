@@ -15,7 +15,7 @@ let rdt: RDT | null = null;
 // the wallet UI will show "Unknown dApp".
 const DAPP_DEFINITION_ADDRESS =
   (import.meta as any).env?.VITE_RADIX_DAPP_DEFINITION_ADDRESS ||
-  "account_rdx128mzr6t2qeklfjxeq206u2yrn4uzq5546fhstf76c3aw432kl0v0cn";
+  "account_rdx129mjzn6j04zy5c7jq447y6r60485z7sd3zvqxah0jfv70k36en8vt9";
 
 export function getRdt(): RDT | null {
   if (typeof window === "undefined") return null;
