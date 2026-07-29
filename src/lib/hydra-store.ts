@@ -26,6 +26,8 @@ export interface Task {
   category: TaskCategory;
   icon: LucideIcon;
   verifyMode: "manual" | "onchain" | "api";
+  profileLabel?: string;
+  profilePlaceholder?: string;
 }
 
 export const TASKS: Task[] = [
@@ -38,6 +40,8 @@ export const TASKS: Task[] = [
     category: "social",
     icon: Twitter,
     verifyMode: "manual",
+    profileLabel: "Your X (Twitter) profile",
+    profilePlaceholder: "@yourhandle or https://x.com/yourhandle",
   },
   {
     id: "ig-follow",
@@ -48,6 +52,8 @@ export const TASKS: Task[] = [
     category: "social",
     icon: Instagram,
     verifyMode: "manual",
+    profileLabel: "Your Instagram profile",
+    profilePlaceholder: "@yourhandle or https://instagram.com/yourhandle",
   },
   {
     id: "tt-follow",
@@ -58,6 +64,8 @@ export const TASKS: Task[] = [
     category: "social",
     icon: Music2,
     verifyMode: "manual",
+    profileLabel: "Your TikTok profile",
+    profilePlaceholder: "@yourhandle or https://tiktok.com/@yourhandle",
   },
   {
     id: "tg-join",
@@ -68,6 +76,8 @@ export const TASKS: Task[] = [
     category: "social",
     icon: Send,
     verifyMode: "manual",
+    profileLabel: "Your Telegram username",
+    profilePlaceholder: "@yourusername",
   },
   {
     id: "yt-subscribe",
@@ -78,6 +88,8 @@ export const TASKS: Task[] = [
     category: "social",
     icon: Youtube,
     verifyMode: "manual",
+    profileLabel: "Your YouTube channel",
+    profilePlaceholder: "@yourchannel or channel URL",
   },
   {
     id: "x-like-share",
@@ -88,6 +100,8 @@ export const TASKS: Task[] = [
     category: "social",
     icon: Heart,
     verifyMode: "manual",
+    profileLabel: "Link to your repost",
+    profilePlaceholder: "https://x.com/yourhandle/status/...",
   },
   {
     id: "x-comment",
@@ -98,6 +112,7 @@ export const TASKS: Task[] = [
     category: "social",
     icon: MessageCircle,
     verifyMode: "manual",
+
   },
   {
     id: "buy-hydr",
