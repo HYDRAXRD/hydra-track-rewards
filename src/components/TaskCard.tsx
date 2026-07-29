@@ -183,14 +183,18 @@ export function TaskCard({ task }: { task: Task }) {
               disabled={
                 !wallet ||
                 submitting ||
-                (isSocialManual ? !handle.trim() : task.verifyMode === "manual" && !visited)
+                (needsInput
+                  ? !handle.trim()
+                  : task.verifyMode === "manual" && !visited)
               }
               className="btn-gradient btn-gradient-hover border-0"
               title={
                 !wallet
                   ? "Connect your wallet first"
-                  : isSocialManual && !handle.trim()
-                    ? "Enter your profile to submit"
+                  : needsInput && !handle.trim()
+                    ? isOnchain
+                      ? "Paste the transaction ID (txid) to submit"
+                      : "Enter your profile to submit"
                     : task.verifyMode === "manual" && !visited
                       ? "Open the link first"
                       : ""
@@ -199,9 +203,9 @@ export function TaskCard({ task }: { task: Task }) {
               {submitting ? (
                 <>
                   <Loader2 className="h-4 w-4 animate-spin" />
-                  {isSocialManual ? "Submitting" : "Verifying"}
+                  {needsInput ? "Submitting" : "Verifying"}
                 </>
-              ) : isSocialManual ? (
+              ) : needsInput ? (
                 <>
                   <ShieldCheck className="h-4 w-4" /> Submit for review
                 </>
