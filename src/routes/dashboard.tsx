@@ -2,12 +2,33 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useHydraStore } from "@/lib/hydra-store";
 import { TaskCard } from "@/components/TaskCard";
 import { AdminPanel } from "@/components/AdminPanel";
+import { ConnectButton } from "@/components/ConnectButton";
 import { TASKS } from "@/lib/hydra-store";
 import { Loader2 } from "lucide-react";
 
-export const Route = createFileRoute("/dashboard")();
+export const Route = createFileRoute("/dashboard")({
+  component: DashboardPage,
+  head: () => ({
+    meta: [
+      { title: "Dashboard — Track Tasks & $HYDR Rewards | HydraTrack" },
+      {
+        name: "description",
+        content:
+          "Complete HYDRA social and on-chain quests, submit proof, and track your $HYDR rewards and progress in real time.",
+      },
+      { property: "og:title", content: "HydraTrack Dashboard — Earn $HYDR" },
+      {
+        property: "og:description",
+        content:
+          "Your HYDRA quest hub: social and on-chain tasks, verification status, and total $HYDR earned.",
+      },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
+    ],
+  }),
+});
 
-export function DashboardPage() {
+function DashboardPage() {
   const { wallet, hydrated, isAdmin } = useHydraStore();
 
   if (!hydrated) {
@@ -20,8 +41,11 @@ export function DashboardPage() {
 
   if (!wallet) {
     return (
-      <div className="text-center py-20 text-muted-foreground">
-        <p className="text-lg">Connect your Radix wallet to view the dashboard.</p>
+      <div className="container mx-auto max-w-md px-4 py-20 text-center">
+        <p className="text-lg text-muted-foreground mb-6">
+          Connect your Radix wallet to view the dashboard.
+        </p>
+        <ConnectButton />
       </div>
     );
   }
