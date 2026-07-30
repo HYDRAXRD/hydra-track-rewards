@@ -292,10 +292,12 @@ export function TaskCard({ task }: { task: Task }) {
               title={
                 !wallet
                   ? "Connect your wallet first"
-                  : isOnchain && !screenshot
+                  : needsScreenshot && !screenshot
                     ? "Upload a screenshot to submit"
-                    : isSocialManual && !handle.trim()
-                      ? "Enter your profile to submit"
+                    : needsTxid && !handle.trim()
+                      ? "Enter the transaction id to submit"
+                      : isSocialManual && !handle.trim()
+                        ? "Enter your profile to submit"
                       : task.verifyMode === "manual" && !visited
                         ? "Open the link first"
                         : ""
