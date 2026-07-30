@@ -13,6 +13,8 @@ export function TaskCard({ task }: { task: Task }) {
   const isPending = Boolean(pendingSub) && !isDone;
   const isSocialManual = task.category === "social" && task.verifyMode === "manual";
   const isOnchain = task.category === "onchain";
+  const needsScreenshot = isOnchain && task.id === "bubbles";
+  const needsTxid = isOnchain && !needsScreenshot;
   const needsInput = isSocialManual || isOnchain;
 
   const [submitting, setSubmitting] = useState(false);
@@ -52,11 +54,15 @@ export function TaskCard({ task }: { task: Task }) {
   const handleSubmit = () => {
     if (!wallet) return;
     if (needsInput) {
-      if (isOnchain && !screenshot) return;
-      if (isSocialManual && !handle.trim()) return;
+      if (needsScreenshot && !screenshot) return;
+      if ((needsTxid || isSocialManual) && !handle.trim()) return;
       setSubmitting(true);
       setTimeout(() => {
-        submitForReview(task.id, isOnchain ? (screenshotName || "screenshot") : handle.trim(), screenshot);
+        submitForReview(
+          task.id,
+          needsScreenshot ? (screenshotName || "screenshot") : handle.trim(),
+          needsScreenshot ? screenshot : undefined,
+        );
         setSubmitting(false);
         setPopup("pending");
         setTimeout(() => setPopup(null), 1600);
@@ -73,8 +79,8 @@ export function TaskCard({ task }: { task: Task }) {
   };
 
   const canSubmit = wallet && !submitting && (
-    isOnchain ? Boolean(screenshot) :
-    isSocialManual ? Boolean(handle.trim()) :
+    needsScreenshot ? Boolean(screenshot) :
+    (needsTxid || isSocialManual) ? Boolean(handle.trim()) :
     (task.verifyMode !== "manual" || visited)
   );
 
@@ -153,8 +159,27 @@ export function TaskCard({ task }: { task: Task }) {
         </div>
       )}
 
-      {/* Onchain tasks: screenshot upload */}
-      {isOnchain && !isDone && (
+      {/* On-chain tasks: transaction id */}
+      {needsTxid && !isDone && (
+        <div className="flex flex-col gap-1.5">
+          <label className="text-xs text-muted-foreground">Transaction ID (txid)</label>
+          <Input
+            value={isPending ? pendingSub!.handle : handle}
+            onChange={(e) => setHandle(e.target.value)}
+            placeholder="txid_rdx1..."
+            disabled={isPending || submitting || !wallet}
+            className="bg-background/60 font-mono text-xs"
+          />
+          {isPending && (
+            <p className="text-[11px] text-yellow-300/90">
+              Txid submitted · reward credited once approved by admin
+            </p>
+          )}
+        </div>
+      )}
+
+      {/* HydraBubbles: screenshot upload */}
+      {needsScreenshot && !isDone && (
         <div className="flex flex-col gap-1.5">
           <label className="text-xs text-muted-foreground">
             Screenshot of system access & wallet connection
@@ -267,10 +292,12 @@ export function TaskCard({ task }: { task: Task }) {
               title={
                 !wallet
                   ? "Connect your wallet first"
-                  : isOnchain && !screenshot
+                  : needsScreenshot && !screenshot
                     ? "Upload a screenshot to submit"
-                    : isSocialManual && !handle.trim()
-                      ? "Enter your profile to submit"
+                    : needsTxid && !handle.trim()
+                      ? "Enter the transaction id to submit"
+                      : isSocialManual && !handle.trim()
+                        ? "Enter your profile to submit"
                       : task.verifyMode === "manual" && !visited
                         ? "Open the link first"
                         : ""
