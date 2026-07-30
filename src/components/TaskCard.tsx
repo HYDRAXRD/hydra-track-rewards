@@ -159,8 +159,27 @@ export function TaskCard({ task }: { task: Task }) {
         </div>
       )}
 
-      {/* Onchain tasks: screenshot upload */}
-      {isOnchain && !isDone && (
+      {/* On-chain tasks: transaction id */}
+      {needsTxid && !isDone && (
+        <div className="flex flex-col gap-1.5">
+          <label className="text-xs text-muted-foreground">Transaction ID (txid)</label>
+          <Input
+            value={isPending ? pendingSub!.handle : handle}
+            onChange={(e) => setHandle(e.target.value)}
+            placeholder="txid_rdx1..."
+            disabled={isPending || submitting || !wallet}
+            className="bg-background/60 font-mono text-xs"
+          />
+          {isPending && (
+            <p className="text-[11px] text-yellow-300/90">
+              Txid submitted · reward credited once approved by admin
+            </p>
+          )}
+        </div>
+      )}
+
+      {/* HydraBubbles: screenshot upload */}
+      {needsScreenshot && !isDone && (
         <div className="flex flex-col gap-1.5">
           <label className="text-xs text-muted-foreground">
             Screenshot of system access & wallet connection
