@@ -165,8 +165,8 @@ export const ADMIN_WALLET = "account_rdx129mjzn6j04zy5c7jq447y6r60485z7sd3zvqxah
 export const HYDR_RESOURCE_ADDRESS = "resource_rdx1t4upr78guuapv5ept7d7ptekk9mqhy605zgms33mcszen8l9fac8vf";
 
 const WALLET_KEY = "hydratrack:wallet";
-const TASKS_KEY = "hydratrack:completed:v2";
-const PENDING_KEY = "hydratrack:pending:v2";
+const TASKS_KEY = "hydratrack:completed:v3";
+const PENDING_KEY = "hydratrack:pending:v3";
 const ADMIN_SUBMISSIONS_KEY = "hydratrack:adminsubmissions:v1";
 
 export interface PendingSubmission {
