@@ -54,11 +54,15 @@ export function TaskCard({ task }: { task: Task }) {
   const handleSubmit = () => {
     if (!wallet) return;
     if (needsInput) {
-      if (isOnchain && !screenshot) return;
-      if (isSocialManual && !handle.trim()) return;
+      if (needsScreenshot && !screenshot) return;
+      if ((needsTxid || isSocialManual) && !handle.trim()) return;
       setSubmitting(true);
       setTimeout(() => {
-        submitForReview(task.id, isOnchain ? (screenshotName || "screenshot") : handle.trim(), screenshot);
+        submitForReview(
+          task.id,
+          needsScreenshot ? (screenshotName || "screenshot") : handle.trim(),
+          needsScreenshot ? screenshot : undefined,
+        );
         setSubmitting(false);
         setPopup("pending");
         setTimeout(() => setPopup(null), 1600);
@@ -75,8 +79,8 @@ export function TaskCard({ task }: { task: Task }) {
   };
 
   const canSubmit = wallet && !submitting && (
-    isOnchain ? Boolean(screenshot) :
-    isSocialManual ? Boolean(handle.trim()) :
+    needsScreenshot ? Boolean(screenshot) :
+    (needsTxid || isSocialManual) ? Boolean(handle.trim()) :
     (task.verifyMode !== "manual" || visited)
   );
 
