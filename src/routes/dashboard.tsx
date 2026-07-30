@@ -41,8 +41,11 @@ function DashboardPage() {
 
   if (!wallet) {
     return (
-      <div className="text-center py-20 text-muted-foreground">
-        <p className="text-lg">Connect your Radix wallet to view the dashboard.</p>
+      <div className="container mx-auto max-w-md px-4 py-20 text-center">
+        <p className="text-lg text-muted-foreground mb-6">
+          Connect your Radix wallet to view the dashboard.
+        </p>
+        <ConnectButton />
       </div>
     );
   }
