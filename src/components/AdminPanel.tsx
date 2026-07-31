@@ -48,58 +48,17 @@ function groupByParticipant(subs: AdminSubmission[]): ParticipantGroup[] {
   });
 }
 
-async function sendTokensViaManifest(recipientAddress: string, amountHydr: number): Promise<boolean> {
+const REWARDS_SENT_KEY = "hydratrack:rewardssent:v1";
+
+function readSentRewards(): Record<string, string> {
+  if (typeof window === "undefined") return {};
   try {
-    const { getRdt } = await import("../lib/radix");
-    const rdt = getRdt();
-    if (!rdt) {
-      alert("Radix Wallet not connected.");
-      return false;
-    }
-
-    // Build the transaction manifest to send HYDR tokens
-    const manifest = `
-CALL_METHOD
-  Address("${ADMIN_WALLET}")
-  "lock_fee"
-  Decimal("10");
-
-CALL_METHOD
-  Address("${ADMIN_WALLET}")
-  "withdraw"
-  Address("${HYDR_RESOURCE_ADDRESS}")
-  Decimal("${amountHydr}");
-
-TAKE_FROM_WORKTOP
-  Address("${HYDR_RESOURCE_ADDRESS}")
-  Decimal("${amountHydr}")
-  Bucket("hydr_bucket");
-
-CALL_METHOD
-  Address("${recipientAddress}")
-  "try_deposit_or_abort"
-  Bucket("hydr_bucket")
-  Enum<0u8>();
-`;
-
-    const result = await rdt.walletApi.sendTransaction({
-      transactionManifest: manifest,
-      version: 1,
-      message: `HydraTrack reward: ${amountHydr.toLocaleString("en-US")} $HYDR`,
-    });
-
-    if (result.isErr()) {
-      const err = result.error as any;
-      alert(`Transaction failed: ${err?.message || err?.error || "Unknown error"}`);
-      return false;
-    }
-
-    return true;
-  } catch (e: any) {
-    alert(`Error sending transaction: ${e?.message || "Unknown error"}`);
-    return false;
+    return JSON.parse(localStorage.getItem(REWARDS_SENT_KEY) || "{}");
+  } catch {
+    return {};
   }
 }
+
 
 export function AdminPanel({ adminWallet }: { adminWallet: string }) {
   const [submissions, setSubmissions] = useState<AdminSubmission[]>(() => readAdminSubmissions());
