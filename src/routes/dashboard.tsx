@@ -1,9 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useHydraStore } from "@/lib/hydra-store";
+import { useHydraStore, useAllTasks } from "@/lib/hydra-store";
 import { TaskCard } from "@/components/TaskCard";
 import { AdminPanel } from "@/components/AdminPanel";
+import { ActivityManager } from "@/components/ActivityManager";
 import { ConnectButton } from "@/components/ConnectButton";
-import { TASKS } from "@/lib/hydra-store";
 import { Loader2 } from "lucide-react";
 
 export const Route = createFileRoute("/dashboard")({
@@ -30,6 +30,7 @@ export const Route = createFileRoute("/dashboard")({
 
 function DashboardPage() {
   const { wallet, hydrated, isAdmin } = useHydraStore();
+  const tasks = useAllTasks();
 
   if (!hydrated) {
     return (
@@ -53,8 +54,9 @@ function DashboardPage() {
   // Admin view
   if (isAdmin) {
     return (
-      <div className="container mx-auto max-w-4xl px-4 py-8">
+      <div className="container mx-auto max-w-4xl px-4 py-8 flex flex-col gap-6">
         <AdminPanel adminWallet={wallet} />
+        <ActivityManager />
       </div>
     );
   }
@@ -69,7 +71,7 @@ function DashboardPage() {
         </p>
       </div>
       <div className="grid gap-4 sm:grid-cols-2">
-        {TASKS.map((task) => (
+        {tasks.map((task) => (
           <TaskCard key={task.id} task={task} />
         ))}
       </div>
