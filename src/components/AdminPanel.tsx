@@ -132,6 +132,15 @@ export function AdminPanel({ adminWallet }: { adminWallet: string }) {
         </div>
       </div>
 
+      {txError && (
+        <div className="flex items-start gap-2 rounded-lg border border-red-500/40 bg-red-500/10 p-3">
+          <AlertTriangle className="h-4 w-4 text-red-400 mt-0.5 shrink-0" />
+          <p className="text-xs text-red-300">{txError}</p>
+        </div>
+      )}
+
+
+
       {groups.length === 0 ? (
         <div className="text-center py-12 text-muted-foreground">
           <User className="h-12 w-12 mx-auto mb-3 opacity-30" />
