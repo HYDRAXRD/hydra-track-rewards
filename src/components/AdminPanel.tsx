@@ -64,11 +64,13 @@ export function AdminPanel({ adminWallet }: { adminWallet: string }) {
   const [submissions, setSubmissions] = useState<AdminSubmission[]>(() => readAdminSubmissions());
   const [expandedWallet, setExpandedWallet] = useState<string | null>(null);
   const [sendingTokens, setSendingTokens] = useState<string | null>(null);
-  const [sentWallets, setSentWallets] = useState<Set<string>>(new Set());
+  const [sentWallets, setSentWallets] = useState<Record<string, string>>(() => readSentRewards());
+  const [txError, setTxError] = useState<string | null>(null);
   const [selectedScreenshot, setSelectedScreenshot] = useState<string | null>(null);
 
   const refresh = useCallback(() => {
     setSubmissions(readAdminSubmissions());
+    setSentWallets(readSentRewards());
   }, []);
 
   const updateSubmissionStatus = (walletAddress: string, taskId: string, status: "approved" | "rejected") => {
@@ -82,17 +84,23 @@ export function AdminPanel({ adminWallet }: { adminWallet: string }) {
   };
 
   const handleSendTokens = async (participant: ParticipantGroup) => {
-    if (sentWallets.has(participant.walletAddress)) {
-      alert("Tokens already sent to this participant.");
+    setTxError(null);
+    if (sentWallets[participant.walletAddress]) {
+      setTxError("Rewards were already sent to this participant.");
       return;
     }
     setSendingTokens(participant.walletAddress);
-    const success = await sendTokensViaManifest(participant.walletAddress, participant.totalReward);
+    const res = await sendHydrReward(participant.walletAddress, participant.totalReward);
     setSendingTokens(null);
-    if (success) {
-      setSentWallets((prev) => new Set([...prev, participant.walletAddress]));
+    if (res.ok) {
+      const next = { ...sentWallets, [participant.walletAddress]: res.hash ?? "sent" };
+      setSentWallets(next);
+      localStorage.setItem(REWARDS_SENT_KEY, JSON.stringify(next));
+    } else {
+      setTxError(res.error ?? "Transaction failed.");
     }
   };
+
 
   const groups = groupByParticipant(submissions);
   const pendingCount = submissions.filter((s) => s.status === "pending").length;
