@@ -67,7 +67,7 @@ function Leaderboard() {
           <div className="text-right">
             <div className="text-xs uppercase tracking-wider text-muted-foreground">Your balance</div>
             <div className="mt-1 text-2xl font-bold gradient-text">
-              {totalEarned.toLocaleString()} $HYDR
+              {totalEarned.toLocaleString("en-US")} $HYDR
             </div>
           </div>
         </div>
@@ -104,7 +104,7 @@ function Leaderboard() {
               <div className="font-mono text-sm truncate">
                 {shortAddr(r.addr)} {isMe && <span className="text-teal ml-2 text-xs">(you)</span>}
               </div>
-              <div className="text-right font-bold">{r.hydr.toLocaleString()}</div>
+              <div className="text-right font-bold">{r.hydr.toLocaleString("en-US")}</div>
               <div className={`text-right text-xs font-semibold ${t.color}`}>{t.name}</div>
             </div>
           );

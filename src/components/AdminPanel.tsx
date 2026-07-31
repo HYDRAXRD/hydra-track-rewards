@@ -85,7 +85,7 @@ CALL_METHOD
     const result = await rdt.walletApi.sendTransaction({
       transactionManifest: manifest,
       version: 1,
-      message: `HydraTrack reward: ${amountHydr.toLocaleString()} $HYDR`,
+      message: `HydraTrack reward: ${amountHydr.toLocaleString("en-US")} $HYDR`,
     });
 
     if (result.isErr()) {
@@ -239,7 +239,7 @@ export function AdminPanel({ adminWallet }: { adminWallet: string }) {
                         <div className="flex flex-col gap-0.5">
                           <span className="text-sm font-medium">{getTaskTitle(sub.taskId)}</span>
                           <span className="text-xs text-muted-foreground">
-                            Reward: <span className="font-semibold text-teal/80" style={{ color: "oklch(0.85 0.15 195)" }}>+{getTaskReward(sub.taskId).toLocaleString()} $HYDR</span>
+                            Reward: <span className="font-semibold text-teal/80" style={{ color: "oklch(0.85 0.15 195)" }}>+{getTaskReward(sub.taskId).toLocaleString("en-US")} $HYDR</span>
                           </span>
                         </div>
                         <div className="flex items-center gap-1.5">
@@ -293,7 +293,7 @@ export function AdminPanel({ adminWallet }: { adminWallet: string }) {
                             </button>
                             <span className="text-xs text-muted-foreground">
                               {sub.handle}<br />
-                              <span className="text-[10px]">{new Date(sub.at).toLocaleString()}</span>
+                              <span className="text-[10px]">{new Date(sub.at).toLocaleString("en-US")}</span>
                             </span>
                           </div>
                         ) : (
@@ -313,7 +313,7 @@ export function AdminPanel({ adminWallet }: { adminWallet: string }) {
                           All tasks approved!
                         </p>
                         <p className="text-xs text-muted-foreground">
-                          Total reward: <span className="font-bold" style={{ color: "oklch(0.85 0.15 195)" }}>{group.totalReward.toLocaleString()} $HYDR</span>
+                          Total reward: <span className="font-bold" style={{ color: "oklch(0.85 0.15 195)" }}>{group.totalReward.toLocaleString("en-US")} $HYDR</span>
                         </p>
                       </div>
                       <Button
@@ -327,7 +327,7 @@ export function AdminPanel({ adminWallet }: { adminWallet: string }) {
                         ) : sentWallets.has(group.walletAddress) ? (
                           <><Check className="h-4 w-4" /> Tokens Sent!</>
                         ) : (
-                          <><Send className="h-4 w-4" /> Send {group.totalReward.toLocaleString()} $HYDR</>
+                          <><Send className="h-4 w-4" /> Send {group.totalReward.toLocaleString("en-US")} $HYDR</>
                         )}
                       </Button>
                     </div>
