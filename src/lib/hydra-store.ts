@@ -12,6 +12,11 @@ import {
   Flame,
   CircleDot,
   Swords,
+  Star,
+  Gift,
+  Trophy,
+  Rocket,
+  Zap,
   type LucideIcon,
 } from "lucide-react";
 
@@ -157,6 +162,84 @@ export const TASKS: Task[] = [
 ];
 
 export const TOTAL_REWARDS = TASKS.reduce((s, t) => s + t.reward, 0);
+
+/* ---------------- Custom activities (created by admin) ---------------- */
+
+const CUSTOM_TASKS_KEY = "hydratrack:customtasks:v1";
+
+export const CUSTOM_TASK_ICONS: Record<string, LucideIcon> = {
+  Star,
+  Gift,
+  Trophy,
+  Rocket,
+  Zap,
+  Coins,
+  Flame,
+  Swords,
+};
+
+export interface CustomTask {
+  id: string;
+  title: string;
+  description: string;
+  link: string;
+  reward: number;
+  category: TaskCategory;
+  iconName: string;
+  verifyMode: "manual" | "onchain" | "api";
+  profileLabel?: string;
+  profilePlaceholder?: string;
+  createdAt: number;
+}
+
+export function readCustomTasks(): CustomTask[] {
+  if (typeof window === "undefined") return [];
+  try {
+    return JSON.parse(localStorage.getItem(CUSTOM_TASKS_KEY) || "[]");
+  } catch {
+    return [];
+  }
+}
+
+export function saveCustomTasks(tasks: CustomTask[]) {
+  if (typeof window === "undefined") return;
+  localStorage.setItem(CUSTOM_TASKS_KEY, JSON.stringify(tasks));
+  window.dispatchEvent(new Event("hydratrack:tasks-changed"));
+}
+
+export function customToTask(c: CustomTask): Task {
+  return {
+    id: c.id,
+    title: c.title,
+    description: c.description,
+    link: c.link,
+    reward: c.reward,
+    category: c.category,
+    icon: CUSTOM_TASK_ICONS[c.iconName] ?? Star,
+    verifyMode: c.verifyMode,
+    profileLabel: c.profileLabel,
+    profilePlaceholder: c.profilePlaceholder,
+  };
+}
+
+export function getAllTasks(): Task[] {
+  return [...TASKS, ...readCustomTasks().map(customToTask)];
+}
+
+export function useAllTasks(): Task[] {
+  const [tasks, setTasks] = useState<Task[]>(TASKS);
+  useEffect(() => {
+    const sync = () => setTasks(getAllTasks());
+    sync();
+    window.addEventListener("hydratrack:tasks-changed", sync);
+    window.addEventListener("storage", sync);
+    return () => {
+      window.removeEventListener("hydratrack:tasks-changed", sync);
+      window.removeEventListener("storage", sync);
+    };
+  }, []);
+  return tasks;
+}
 
 // Admin wallet address - only this wallet can access the admin panel
 export const ADMIN_WALLET = "account_rdx129mjzn6j04zy5c7jq447y6r60485z7sd3zvqxah0jfv70k36en8vt9";
