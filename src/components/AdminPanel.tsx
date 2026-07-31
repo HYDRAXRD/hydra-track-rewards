@@ -1,16 +1,16 @@
 import { useState, useCallback } from "react";
-import { Check, X, ShieldCheck, Loader2, User, ChevronDown, ChevronUp, ExternalLink, Send } from "lucide-react";
+import { Check, X, ShieldCheck, Loader2, User, ChevronDown, ChevronUp, ExternalLink, Send, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
   getAllTasks,
-  ADMIN_WALLET,
-  HYDR_RESOURCE_ADDRESS,
   readAdminSubmissions,
   saveAdminSubmissions,
   type AdminSubmission,
 } from "@/lib/hydra-store";
+import { sendHydrReward } from "@/lib/rewards";
 import { cn } from "@/lib/utils";
+
 
 function shortAddr(a: string) {
   return a.length > 14 ? `${a.slice(0, 8)}…${a.slice(-6)}` : a;
@@ -48,68 +48,29 @@ function groupByParticipant(subs: AdminSubmission[]): ParticipantGroup[] {
   });
 }
 
-async function sendTokensViaManifest(recipientAddress: string, amountHydr: number): Promise<boolean> {
+const REWARDS_SENT_KEY = "hydratrack:rewardssent:v1";
+
+function readSentRewards(): Record<string, string> {
+  if (typeof window === "undefined") return {};
   try {
-    const { getRdt } = await import("../lib/radix");
-    const rdt = getRdt();
-    if (!rdt) {
-      alert("Radix Wallet not connected.");
-      return false;
-    }
-
-    // Build the transaction manifest to send HYDR tokens
-    const manifest = `
-CALL_METHOD
-  Address("${ADMIN_WALLET}")
-  "lock_fee"
-  Decimal("10");
-
-CALL_METHOD
-  Address("${ADMIN_WALLET}")
-  "withdraw"
-  Address("${HYDR_RESOURCE_ADDRESS}")
-  Decimal("${amountHydr}");
-
-TAKE_FROM_WORKTOP
-  Address("${HYDR_RESOURCE_ADDRESS}")
-  Decimal("${amountHydr}")
-  Bucket("hydr_bucket");
-
-CALL_METHOD
-  Address("${recipientAddress}")
-  "try_deposit_or_abort"
-  Bucket("hydr_bucket")
-  Enum<0u8>();
-`;
-
-    const result = await rdt.walletApi.sendTransaction({
-      transactionManifest: manifest,
-      version: 1,
-      message: `HydraTrack reward: ${amountHydr.toLocaleString()} $HYDR`,
-    });
-
-    if (result.isErr()) {
-      const err = result.error as any;
-      alert(`Transaction failed: ${err?.message || err?.error || "Unknown error"}`);
-      return false;
-    }
-
-    return true;
-  } catch (e: any) {
-    alert(`Error sending transaction: ${e?.message || "Unknown error"}`);
-    return false;
+    return JSON.parse(localStorage.getItem(REWARDS_SENT_KEY) || "{}");
+  } catch {
+    return {};
   }
 }
+
 
 export function AdminPanel({ adminWallet }: { adminWallet: string }) {
   const [submissions, setSubmissions] = useState<AdminSubmission[]>(() => readAdminSubmissions());
   const [expandedWallet, setExpandedWallet] = useState<string | null>(null);
   const [sendingTokens, setSendingTokens] = useState<string | null>(null);
-  const [sentWallets, setSentWallets] = useState<Set<string>>(new Set());
+  const [sentWallets, setSentWallets] = useState<Record<string, string>>(() => readSentRewards());
+  const [txError, setTxError] = useState<string | null>(null);
   const [selectedScreenshot, setSelectedScreenshot] = useState<string | null>(null);
 
   const refresh = useCallback(() => {
     setSubmissions(readAdminSubmissions());
+    setSentWallets(readSentRewards());
   }, []);
 
   const updateSubmissionStatus = (walletAddress: string, taskId: string, status: "approved" | "rejected") => {
@@ -123,17 +84,23 @@ export function AdminPanel({ adminWallet }: { adminWallet: string }) {
   };
 
   const handleSendTokens = async (participant: ParticipantGroup) => {
-    if (sentWallets.has(participant.walletAddress)) {
-      alert("Tokens already sent to this participant.");
+    setTxError(null);
+    if (sentWallets[participant.walletAddress]) {
+      setTxError("Rewards were already sent to this participant.");
       return;
     }
     setSendingTokens(participant.walletAddress);
-    const success = await sendTokensViaManifest(participant.walletAddress, participant.totalReward);
+    const res = await sendHydrReward(participant.walletAddress, participant.totalReward);
     setSendingTokens(null);
-    if (success) {
-      setSentWallets((prev) => new Set([...prev, participant.walletAddress]));
+    if (res.ok) {
+      const next = { ...sentWallets, [participant.walletAddress]: res.hash ?? "sent" };
+      setSentWallets(next);
+      localStorage.setItem(REWARDS_SENT_KEY, JSON.stringify(next));
+    } else {
+      setTxError(res.error ?? "Transaction failed.");
     }
   };
+
 
   const groups = groupByParticipant(submissions);
   const pendingCount = submissions.filter((s) => s.status === "pending").length;
@@ -164,6 +131,15 @@ export function AdminPanel({ adminWallet }: { adminWallet: string }) {
           </Button>
         </div>
       </div>
+
+      {txError && (
+        <div className="flex items-start gap-2 rounded-lg border border-red-500/40 bg-red-500/10 p-3">
+          <AlertTriangle className="h-4 w-4 text-red-400 mt-0.5 shrink-0" />
+          <p className="text-xs text-red-300">{txError}</p>
+        </div>
+      )}
+
+
 
       {groups.length === 0 ? (
         <div className="text-center py-12 text-muted-foreground">
@@ -239,7 +215,7 @@ export function AdminPanel({ adminWallet }: { adminWallet: string }) {
                         <div className="flex flex-col gap-0.5">
                           <span className="text-sm font-medium">{getTaskTitle(sub.taskId)}</span>
                           <span className="text-xs text-muted-foreground">
-                            Reward: <span className="font-semibold text-teal/80" style={{ color: "oklch(0.85 0.15 195)" }}>+{getTaskReward(sub.taskId).toLocaleString()} $HYDR</span>
+                            Reward: <span className="font-semibold text-teal/80" style={{ color: "oklch(0.85 0.15 195)" }}>+{getTaskReward(sub.taskId).toLocaleString("en-US")} $HYDR</span>
                           </span>
                         </div>
                         <div className="flex items-center gap-1.5">
@@ -293,7 +269,7 @@ export function AdminPanel({ adminWallet }: { adminWallet: string }) {
                             </button>
                             <span className="text-xs text-muted-foreground">
                               {sub.handle}<br />
-                              <span className="text-[10px]">{new Date(sub.at).toLocaleString()}</span>
+                              <span className="text-[10px]">{new Date(sub.at).toLocaleString("en-US")}</span>
                             </span>
                           </div>
                         ) : (
@@ -305,33 +281,46 @@ export function AdminPanel({ adminWallet }: { adminWallet: string }) {
                     </div>
                   ))}
 
-                  {/* Send tokens button - only when all tasks approved */}
-                  {group.allApproved && group.totalReward > 0 && (
-                    <div className="mt-2 p-3 rounded-lg bg-teal/10 border border-teal/30 flex items-center justify-between gap-3">
-                      <div>
-                        <p className="text-sm font-semibold" style={{ color: "oklch(0.85 0.15 195)" }}>
-                          All tasks approved!
-                        </p>
-                        <p className="text-xs text-muted-foreground">
-                          Total reward: <span className="font-bold" style={{ color: "oklch(0.85 0.15 195)" }}>{group.totalReward.toLocaleString()} $HYDR</span>
-                        </p>
+                  {/* Send approved rewards */}
+                  {group.totalReward > 0 && (
+                    <div className="mt-2 p-3 rounded-lg bg-teal/10 border border-teal/30 flex flex-col gap-2">
+                      <div className="flex items-center justify-between gap-3">
+                        <div>
+                          <p className="text-sm font-semibold" style={{ color: "oklch(0.85 0.15 195)" }}>
+                            {group.hasPending ? "Approved tasks ready to pay" : "All tasks approved!"}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            Total reward: <span className="font-bold" style={{ color: "oklch(0.85 0.15 195)" }}>{group.totalReward.toLocaleString("en-US")} $HYDR</span>
+                          </p>
+                        </div>
+                        <Button
+                          size="sm"
+                          onClick={() => handleSendTokens(group)}
+                          disabled={sendingTokens === group.walletAddress || Boolean(sentWallets[group.walletAddress])}
+                          className="btn-gradient btn-gradient-hover border-0 gap-2"
+                        >
+                          {sendingTokens === group.walletAddress ? (
+                            <><Loader2 className="h-4 w-4 animate-spin" /> Sending...</>
+                          ) : sentWallets[group.walletAddress] ? (
+                            <><Check className="h-4 w-4" /> Tokens Sent!</>
+                          ) : (
+                            <><Send className="h-4 w-4" /> Send {group.totalReward.toLocaleString("en-US")} $HYDR</>
+                          )}
+                        </Button>
                       </div>
-                      <Button
-                        size="sm"
-                        onClick={() => handleSendTokens(group)}
-                        disabled={sendingTokens === group.walletAddress || sentWallets.has(group.walletAddress)}
-                        className="btn-gradient btn-gradient-hover border-0 gap-2"
-                      >
-                        {sendingTokens === group.walletAddress ? (
-                          <><Loader2 className="h-4 w-4 animate-spin" /> Sending...</>
-                        ) : sentWallets.has(group.walletAddress) ? (
-                          <><Check className="h-4 w-4" /> Tokens Sent!</>
-                        ) : (
-                          <><Send className="h-4 w-4" /> Send {group.totalReward.toLocaleString()} $HYDR</>
-                        )}
-                      </Button>
+                      {sentWallets[group.walletAddress] && sentWallets[group.walletAddress] !== "sent" && (
+                        <a
+                          href={`https://dashboard.radixdlt.com/transaction/${sentWallets[group.walletAddress]}`}
+                          target="_blank"
+                          rel="noreferrer noopener"
+                          className="text-[11px] font-mono underline text-muted-foreground hover:text-foreground inline-flex items-center gap-1"
+                        >
+                          View transaction <ExternalLink className="h-3 w-3" />
+                        </a>
+                      )}
                     </div>
                   )}
+
                 </div>
               )}
             </div>

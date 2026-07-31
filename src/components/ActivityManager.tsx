@@ -223,7 +223,7 @@ export function ActivityManager() {
               </div>
               <div className="flex items-center gap-2 shrink-0">
                 <Badge className="border-0 text-xs" style={{ background: "var(--gradient-brand)", color: "white" }}>
-                  +{t.reward.toLocaleString()} $HYDR
+                  +{t.reward.toLocaleString("en-US")} $HYDR
                 </Badge>
                 <Button
                   size="sm"

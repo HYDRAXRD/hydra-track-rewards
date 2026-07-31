@@ -94,7 +94,7 @@ export function TaskCard({ task }: { task: Task }) {
     >
       {popup === "done" && (
         <div className="pointer-events-none absolute right-4 top-4 reward-pop text-teal font-bold">
-          +{task.reward.toLocaleString()} $HYDR
+          +{task.reward.toLocaleString("en-US")} $HYDR
         </div>
       )}
       {popup === "pending" && (
@@ -132,7 +132,7 @@ export function TaskCard({ task }: { task: Task }) {
             color: "white",
           }}
         >
-          +{task.reward.toLocaleString()} $HYDR
+          +{task.reward.toLocaleString("en-US")} $HYDR
         </Badge>
       </div>
 

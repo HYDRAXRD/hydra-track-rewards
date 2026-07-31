@@ -77,7 +77,7 @@ function Landing() {
             <div className="mx-auto mt-8 inline-flex items-center gap-4 rounded-2xl glass-card px-5 py-3 text-sm">
               <span className="font-mono text-muted-foreground">{shortAddr(wallet)}</span>
               <span className="h-4 w-px bg-border" />
-              <span><span className="gradient-text font-bold">{totalEarned.toLocaleString()}</span> $HYDR earned</span>
+              <span><span className="gradient-text font-bold">{totalEarned.toLocaleString("en-US")}</span> $HYDR earned</span>
               <span className="h-4 w-px bg-border" />
               <span>{completedCount}/{TASKS.length} tasks</span>
             </div>
@@ -88,7 +88,7 @@ function Landing() {
         <div className="mx-auto max-w-5xl px-4 pb-16">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
             {[
-              { label: "Total rewards", value: `${TOTAL_REWARDS.toLocaleString()} $HYDR` },
+              { label: "Total rewards", value: `${TOTAL_REWARDS.toLocaleString("en-US")} $HYDR` },
               { label: "Quests available", value: TASKS.length },
               { label: "Networks", value: "Radix DLT" },
               { label: "Wallet", value: "Radix Connector" },
