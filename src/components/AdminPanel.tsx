@@ -3,7 +3,7 @@ import { Check, X, ShieldCheck, Loader2, User, ChevronDown, ChevronUp, ExternalL
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
-  TASKS,
+  getAllTasks,
   ADMIN_WALLET,
   HYDR_RESOURCE_ADDRESS,
   readAdminSubmissions,
@@ -17,11 +17,11 @@ function shortAddr(a: string) {
 }
 
 function getTaskTitle(taskId: string) {
-  return TASKS.find((t) => t.id === taskId)?.title ?? taskId;
+  return getAllTasks().find((t) => t.id === taskId)?.title ?? taskId;
 }
 
 function getTaskReward(taskId: string) {
-  return TASKS.find((t) => t.id === taskId)?.reward ?? 0;
+  return getAllTasks().find((t) => t.id === taskId)?.reward ?? 0;
 }
 
 interface ParticipantGroup {
