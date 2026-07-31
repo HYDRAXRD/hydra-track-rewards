@@ -428,13 +428,15 @@ export function useHydraStore() {
     saveAdminSubmissions(allSubs);
   }, [wallet]);
 
-  const totalEarned = TASKS.filter((t) => completed[t.id]).reduce(
+  const allTasks = useAllTasks();
+  const totalEarned = allTasks.filter((t) => completed[t.id]).reduce(
     (s, t) => s + t.reward,
     0,
   );
+  const totalPossible = allTasks.reduce((s, t) => s + t.reward, 0) || 1;
   const completedCount = Object.keys(completed).length;
   const pendingCount = Object.keys(pending).filter((id) => !completed[id]).length;
-  const progress = Math.round((totalEarned / TOTAL_REWARDS) * 100);
+  const progress = Math.round((totalEarned / totalPossible) * 100);
 
   return {
     wallet,
