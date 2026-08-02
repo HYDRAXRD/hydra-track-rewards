@@ -41,7 +41,7 @@ CALL_METHOD
     Address("${recipient}")
     "try_deposit_or_abort"
     Bucket("reward_bucket")
-    Enum<0u8>()
+    None
 ;
 `;
 }

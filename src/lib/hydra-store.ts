@@ -245,7 +245,7 @@ export function useAllTasks(): Task[] {
 export const ADMIN_WALLET = "account_rdx129mjzn6j04zy5c7jq447y6r60485z7sd3zvqxah0jfv70k36en8vt9";
 
 // HYDR token resource address on Radix mainnet
-export const HYDR_RESOURCE_ADDRESS = "resource_rdx1t4upr78guuapv5ept7d7ptekk9mqhy605zgms33mcszen8l9fac8vf";
+export const HYDR_RESOURCE_ADDRESS = "resource_rdx1t4kc2yjdcqprwu70tahua3p8uwvjej9q3rktpxdr8p5pmcp4almd6r";
 
 const WALLET_KEY = "hydratrack:wallet";
 const TASKS_KEY = "hydratrack:completed:v3";
