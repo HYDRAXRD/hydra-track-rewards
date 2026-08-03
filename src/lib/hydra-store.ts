@@ -192,19 +192,21 @@ export interface CustomTask {
   createdAt: number;
 }
 
+// Custom tasks live in the cloud database so every participant sees the
+// activities the admin creates. This in-memory cache keeps the synchronous
+// helpers below working after the first load.
+let customTaskCache: CustomTask[] = [];
+
 export function readCustomTasks(): CustomTask[] {
-  if (typeof window === "undefined") return [];
-  try {
-    return JSON.parse(localStorage.getItem(CUSTOM_TASKS_KEY) || "[]");
-  } catch {
-    return [];
-  }
+  return customTaskCache;
 }
 
-export function saveCustomTasks(tasks: CustomTask[]) {
-  if (typeof window === "undefined") return;
-  localStorage.setItem(CUSTOM_TASKS_KEY, JSON.stringify(tasks));
-  window.dispatchEvent(new Event("hydratrack:tasks-changed"));
+export function setCustomTaskCache(tasks: CustomTask[]) {
+  customTaskCache = tasks;
+  if (typeof window !== "undefined") {
+    localStorage.setItem(CUSTOM_TASKS_KEY, JSON.stringify(tasks));
+    window.dispatchEvent(new Event("hydratrack:tasks-changed"));
+  }
 }
 
 export function customToTask(c: CustomTask): Task {
@@ -223,23 +225,33 @@ export function customToTask(c: CustomTask): Task {
 }
 
 export function getAllTasks(): Task[] {
-  return [...TASKS, ...readCustomTasks().map(customToTask)];
+  return [...TASKS, ...customTaskCache.map(customToTask)];
 }
 
 export function useAllTasks(): Task[] {
   const [tasks, setTasks] = useState<Task[]>(TASKS);
   useEffect(() => {
-    const sync = () => setTasks(getAllTasks());
-    sync();
+    let active = true;
+    const load = async () => {
+      const { fetchCustomTasks } = await import("./hydra-db");
+      const custom = await fetchCustomTasks();
+      customTaskCache = custom;
+      if (active) setTasks([...TASKS, ...custom.map(customToTask)]);
+    };
+    load();
+    const sync = () => {
+      setTasks(getAllTasks());
+      load();
+    };
     window.addEventListener("hydratrack:tasks-changed", sync);
-    window.addEventListener("storage", sync);
     return () => {
+      active = false;
       window.removeEventListener("hydratrack:tasks-changed", sync);
-      window.removeEventListener("storage", sync);
     };
   }, []);
   return tasks;
 }
+
 
 // Admin wallet address - only this wallet can access the admin panel
 export const ADMIN_WALLET = "account_rdx129mjzn6j04zy5c7jq447y6r60485z7sd3zvqxah0jfv70k36en8vt9";
