@@ -42,7 +42,15 @@ export function ActivityManager() {
   const [profilePlaceholder, setProfilePlaceholder] = useState("");
 
   useEffect(() => {
-    setTasks(readCustomTasks());
+    let active = true;
+    fetchCustomTasks().then((t) => {
+      if (!active) return;
+      setTasks(t);
+      setCustomTaskCache(t);
+    });
+    return () => {
+      active = false;
+    };
   }, []);
 
   const reset = () => {
@@ -59,38 +67,38 @@ export function ActivityManager() {
   const canSave =
     title.trim() && description.trim() && link.trim() && Number(reward) > 0;
 
-  const addTask = () => {
+  const addTask = async () => {
     if (!canSave) return;
-    const existing = readCustomTasks();
     let id = slugify(title);
-    if (existing.some((t) => t.id === id)) id = `${id}-${Date.now().toString(36).slice(-4)}`;
-    const next: CustomTask[] = [
-      ...existing,
-      {
-        id,
-        title: title.trim(),
-        description: description.trim(),
-        link: link.trim(),
-        reward: Number(reward),
-        category,
-        iconName,
-        verifyMode: "manual",
-        profileLabel: profileLabel.trim() || undefined,
-        profilePlaceholder: profilePlaceholder.trim() || undefined,
-        createdAt: Date.now(),
-      },
-    ];
-    saveCustomTasks(next);
+    if (tasks.some((t) => t.id === id)) id = `${id}-${Date.now().toString(36).slice(-4)}`;
+    const task: CustomTask = {
+      id,
+      title: title.trim(),
+      description: description.trim(),
+      link: link.trim(),
+      reward: Number(reward),
+      category,
+      iconName,
+      verifyMode: "manual",
+      profileLabel: profileLabel.trim() || undefined,
+      profilePlaceholder: profilePlaceholder.trim() || undefined,
+      createdAt: Date.now(),
+    };
+    await insertCustomTask(task);
+    const next = await fetchCustomTasks();
     setTasks(next);
+    setCustomTaskCache(next);
     reset();
     setOpen(false);
   };
 
-  const removeTask = (id: string) => {
-    const next = readCustomTasks().filter((t) => t.id !== id);
-    saveCustomTasks(next);
+  const removeTask = async (id: string) => {
+    await deleteCustomTask(id);
+    const next = await fetchCustomTasks();
     setTasks(next);
+    setCustomTaskCache(next);
   };
+
 
   return (
     <div className="glass-card rounded-2xl p-6 flex flex-col gap-5">
