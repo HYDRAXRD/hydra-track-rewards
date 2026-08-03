@@ -1,15 +1,22 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { Check, X, ShieldCheck, Loader2, User, ChevronDown, ChevronUp, ExternalLink, Send, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
   getAllTasks,
-  readAdminSubmissions,
-  saveAdminSubmissions,
+  setCustomTaskCache,
   type AdminSubmission,
 } from "@/lib/hydra-store";
+import {
+  fetchSubmissions,
+  fetchPayouts,
+  fetchCustomTasks,
+  setSubmissionStatus,
+  recordPayout,
+} from "@/lib/hydra-db";
 import { sendHydrReward } from "@/lib/rewards";
 import { cn } from "@/lib/utils";
+
 
 
 function shortAddr(a: string) {
