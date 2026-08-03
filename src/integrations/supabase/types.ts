@@ -14,7 +14,105 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      custom_tasks: {
+        Row: {
+          category: string
+          created_at: string
+          description: string
+          icon_name: string
+          id: string
+          link: string
+          profile_label: string | null
+          profile_placeholder: string | null
+          reward: number
+          title: string
+          verify_mode: string
+        }
+        Insert: {
+          category?: string
+          created_at?: string
+          description?: string
+          icon_name?: string
+          id: string
+          link?: string
+          profile_label?: string | null
+          profile_placeholder?: string | null
+          reward?: number
+          title: string
+          verify_mode?: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          description?: string
+          icon_name?: string
+          id?: string
+          link?: string
+          profile_label?: string | null
+          profile_placeholder?: string | null
+          reward?: number
+          title?: string
+          verify_mode?: string
+        }
+        Relationships: []
+      }
+      reward_payouts: {
+        Row: {
+          amount: number
+          created_at: string
+          id: string
+          tx_hash: string | null
+          wallet_address: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          id?: string
+          tx_hash?: string | null
+          wallet_address: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          id?: string
+          tx_hash?: string | null
+          wallet_address?: string
+        }
+        Relationships: []
+      }
+      submissions: {
+        Row: {
+          created_at: string
+          handle: string
+          id: string
+          reviewed_at: string | null
+          screenshot: string | null
+          status: string
+          task_id: string
+          wallet_address: string
+        }
+        Insert: {
+          created_at?: string
+          handle?: string
+          id?: string
+          reviewed_at?: string | null
+          screenshot?: string | null
+          status?: string
+          task_id: string
+          wallet_address: string
+        }
+        Update: {
+          created_at?: string
+          handle?: string
+          id?: string
+          reviewed_at?: string | null
+          screenshot?: string | null
+          status?: string
+          task_id?: string
+          wallet_address?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
