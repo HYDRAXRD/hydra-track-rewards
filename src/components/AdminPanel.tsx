@@ -168,7 +168,6 @@ export function AdminPanel({ adminWallet }: { adminWallet: string }) {
         </div>
       ) : (
 
-      ) : (
         <div className="flex flex-col gap-3">
           {groups.map((group) => (
             <div
