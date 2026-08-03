@@ -5,11 +5,16 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import {
   CUSTOM_TASK_ICONS,
-  readCustomTasks,
-  saveCustomTasks,
+  setCustomTaskCache,
   type CustomTask,
   type TaskCategory,
 } from "@/lib/hydra-store";
+import {
+  fetchCustomTasks,
+  insertCustomTask,
+  deleteCustomTask,
+} from "@/lib/hydra-db";
+
 
 const ICON_NAMES = Object.keys(CUSTOM_TASK_ICONS);
 
