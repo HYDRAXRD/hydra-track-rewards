@@ -156,11 +156,18 @@ export function AdminPanel({ adminWallet }: { adminWallet: string }) {
 
 
 
-      {groups.length === 0 ? (
+      {loading ? (
+        <div className="text-center py-12 text-muted-foreground">
+          <Loader2 className="h-8 w-8 mx-auto mb-3 animate-spin opacity-60" />
+          <p className="text-sm">Loading submissions…</p>
+        </div>
+      ) : groups.length === 0 ? (
         <div className="text-center py-12 text-muted-foreground">
           <User className="h-12 w-12 mx-auto mb-3 opacity-30" />
           <p className="text-sm">No submissions yet.</p>
         </div>
+      ) : (
+
       ) : (
         <div className="flex flex-col gap-3">
           {groups.map((group) => (
