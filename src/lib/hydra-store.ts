@@ -363,6 +363,41 @@ export function useHydraStore() {
     };
   }, []);
 
+  // Load this wallet's submissions from the cloud so progress follows the
+  // wallet across devices/browsers, not just this one.
+  useEffect(() => {
+    if (!wallet) return;
+    let active = true;
+    (async () => {
+      const { fetchSubmissionsForWallet } = await import("./hydra-db");
+      const subs = await fetchSubmissionsForWallet(wallet);
+      if (!active) return;
+      const nextCompleted: Record<string, number> = {};
+      const nextPending: Record<string, PendingSubmission> = {};
+      for (const s of subs) {
+        if (s.status === "approved") {
+          nextCompleted[s.taskId] = s.approvedAt ?? s.at;
+        } else if (s.status === "pending") {
+          nextPending[s.taskId] = {
+            handle: s.handle,
+            screenshot: s.screenshot,
+            at: s.at,
+            walletAddress: s.walletAddress,
+          };
+        }
+      }
+      setCompleted(nextCompleted);
+      setPending(nextPending);
+      localStorage.setItem(TASKS_KEY, JSON.stringify(nextCompleted));
+      localStorage.setItem(PENDING_KEY, JSON.stringify(nextPending));
+    })();
+    return () => {
+      active = false;
+    };
+  }, [wallet]);
+
+
+
   const connect = useCallback(async () => {
     setConnecting(true);
     setConnectError(null);
