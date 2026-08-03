@@ -192,19 +192,21 @@ export interface CustomTask {
   createdAt: number;
 }
 
+// Custom tasks live in the cloud database so every participant sees the
+// activities the admin creates. This in-memory cache keeps the synchronous
+// helpers below working after the first load.
+let customTaskCache: CustomTask[] = [];
+
 export function readCustomTasks(): CustomTask[] {
-  if (typeof window === "undefined") return [];
-  try {
-    return JSON.parse(localStorage.getItem(CUSTOM_TASKS_KEY) || "[]");
-  } catch {
-    return [];
-  }
+  return customTaskCache;
 }
 
-export function saveCustomTasks(tasks: CustomTask[]) {
-  if (typeof window === "undefined") return;
-  localStorage.setItem(CUSTOM_TASKS_KEY, JSON.stringify(tasks));
-  window.dispatchEvent(new Event("hydratrack:tasks-changed"));
+export function setCustomTaskCache(tasks: CustomTask[]) {
+  customTaskCache = tasks;
+  if (typeof window !== "undefined") {
+    localStorage.setItem(CUSTOM_TASKS_KEY, JSON.stringify(tasks));
+    window.dispatchEvent(new Event("hydratrack:tasks-changed"));
+  }
 }
 
 export function customToTask(c: CustomTask): Task {
@@ -223,23 +225,33 @@ export function customToTask(c: CustomTask): Task {
 }
 
 export function getAllTasks(): Task[] {
-  return [...TASKS, ...readCustomTasks().map(customToTask)];
+  return [...TASKS, ...customTaskCache.map(customToTask)];
 }
 
 export function useAllTasks(): Task[] {
   const [tasks, setTasks] = useState<Task[]>(TASKS);
   useEffect(() => {
-    const sync = () => setTasks(getAllTasks());
-    sync();
+    let active = true;
+    const load = async () => {
+      const { fetchCustomTasks } = await import("./hydra-db");
+      const custom = await fetchCustomTasks();
+      customTaskCache = custom;
+      if (active) setTasks([...TASKS, ...custom.map(customToTask)]);
+    };
+    load();
+    const sync = () => {
+      setTasks(getAllTasks());
+      load();
+    };
     window.addEventListener("hydratrack:tasks-changed", sync);
-    window.addEventListener("storage", sync);
     return () => {
+      active = false;
       window.removeEventListener("hydratrack:tasks-changed", sync);
-      window.removeEventListener("storage", sync);
     };
   }, []);
   return tasks;
 }
+
 
 // Admin wallet address - only this wallet can access the admin panel
 export const ADMIN_WALLET = "account_rdx129mjzn6j04zy5c7jq447y6r60485z7sd3zvqxah0jfv70k36en8vt9";
@@ -351,6 +363,41 @@ export function useHydraStore() {
     };
   }, []);
 
+  // Load this wallet's submissions from the cloud so progress follows the
+  // wallet across devices/browsers, not just this one.
+  useEffect(() => {
+    if (!wallet) return;
+    let active = true;
+    (async () => {
+      const { fetchSubmissionsForWallet } = await import("./hydra-db");
+      const subs = await fetchSubmissionsForWallet(wallet);
+      if (!active) return;
+      const nextCompleted: Record<string, number> = {};
+      const nextPending: Record<string, PendingSubmission> = {};
+      for (const s of subs) {
+        if (s.status === "approved") {
+          nextCompleted[s.taskId] = s.approvedAt ?? s.at;
+        } else if (s.status === "pending") {
+          nextPending[s.taskId] = {
+            handle: s.handle,
+            screenshot: s.screenshot,
+            at: s.at,
+            walletAddress: s.walletAddress,
+          };
+        }
+      }
+      setCompleted(nextCompleted);
+      setPending(nextPending);
+      localStorage.setItem(TASKS_KEY, JSON.stringify(nextCompleted));
+      localStorage.setItem(PENDING_KEY, JSON.stringify(nextPending));
+    })();
+    return () => {
+      active = false;
+    };
+  }, [wallet]);
+
+
+
   const connect = useCallback(async () => {
     setConnecting(true);
     setConnectError(null);
@@ -403,30 +450,19 @@ export function useHydraStore() {
 
   const submitForReview = useCallback((taskId: string, handle: string, screenshot?: string) => {
     if (!wallet) return;
-    // Save to pending (user state)
+    // Optimistic local state
     setPending((prev) => {
       const next = { ...prev, [taskId]: { handle, screenshot, at: Date.now(), walletAddress: wallet } };
       localStorage.setItem(PENDING_KEY, JSON.stringify(next));
       return next;
     });
-    // Also save to admin submissions list
-    const allSubs = readAdminSubmissions();
-    const existingIdx = allSubs.findIndex(s => s.walletAddress === wallet && s.taskId === taskId);
-    const newSub: AdminSubmission = {
-      walletAddress: wallet,
-      taskId,
-      handle,
-      screenshot,
-      at: Date.now(),
-      status: "pending",
-    };
-    if (existingIdx >= 0) {
-      allSubs[existingIdx] = newSub;
-    } else {
-      allSubs.push(newSub);
-    }
-    saveAdminSubmissions(allSubs);
+    // Persist to the shared cloud database so the admin sees it from any device
+    void (async () => {
+      const { upsertSubmission } = await import("./hydra-db");
+      await upsertSubmission({ walletAddress: wallet, taskId, handle, screenshot });
+    })();
   }, [wallet]);
+
 
   const allTasks = useAllTasks();
   const totalEarned = allTasks.filter((t) => completed[t.id]).reduce(

@@ -1,15 +1,22 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { Check, X, ShieldCheck, Loader2, User, ChevronDown, ChevronUp, ExternalLink, Send, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
   getAllTasks,
-  readAdminSubmissions,
-  saveAdminSubmissions,
+  setCustomTaskCache,
   type AdminSubmission,
 } from "@/lib/hydra-store";
+import {
+  fetchSubmissions,
+  fetchPayouts,
+  fetchCustomTasks,
+  setSubmissionStatus,
+  recordPayout,
+} from "@/lib/hydra-db";
 import { sendHydrReward } from "@/lib/rewards";
 import { cn } from "@/lib/utils";
+
 
 
 function shortAddr(a: string) {
@@ -48,39 +55,47 @@ function groupByParticipant(subs: AdminSubmission[]): ParticipantGroup[] {
   });
 }
 
-const REWARDS_SENT_KEY = "hydratrack:rewardssent:v1";
-
-function readSentRewards(): Record<string, string> {
-  if (typeof window === "undefined") return {};
-  try {
-    return JSON.parse(localStorage.getItem(REWARDS_SENT_KEY) || "{}");
-  } catch {
-    return {};
-  }
-}
-
-
 export function AdminPanel({ adminWallet }: { adminWallet: string }) {
-  const [submissions, setSubmissions] = useState<AdminSubmission[]>(() => readAdminSubmissions());
+  const [submissions, setSubmissions] = useState<AdminSubmission[]>([]);
   const [expandedWallet, setExpandedWallet] = useState<string | null>(null);
   const [sendingTokens, setSendingTokens] = useState<string | null>(null);
-  const [sentWallets, setSentWallets] = useState<Record<string, string>>(() => readSentRewards());
+  const [sentWallets, setSentWallets] = useState<Record<string, string>>({});
   const [txError, setTxError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
   const [selectedScreenshot, setSelectedScreenshot] = useState<string | null>(null);
 
-  const refresh = useCallback(() => {
-    setSubmissions(readAdminSubmissions());
-    setSentWallets(readSentRewards());
+  const refresh = useCallback(async () => {
+    setLoading(true);
+    const [subs, payouts, custom] = await Promise.all([
+      fetchSubmissions(),
+      fetchPayouts(),
+      fetchCustomTasks(),
+    ]);
+    setCustomTaskCache(custom);
+    setSubmissions(subs);
+    const sent: Record<string, string> = {};
+    for (const p of payouts) sent[p.walletAddress] = p.txHash ?? "sent";
+    setSentWallets(sent);
+    setLoading(false);
   }, []);
 
-  const updateSubmissionStatus = (walletAddress: string, taskId: string, status: "approved" | "rejected") => {
-    const updated = submissions.map((s) =>
-      s.walletAddress === walletAddress && s.taskId === taskId
-        ? { ...s, status, approvedAt: status === "approved" ? Date.now() : undefined }
-        : s
+  useEffect(() => {
+    void refresh();
+  }, [refresh]);
+
+  const updateSubmissionStatus = async (walletAddress: string, taskId: string, status: "approved" | "rejected") => {
+    setSubmissions((prev) =>
+      prev.map((s) =>
+        s.walletAddress === walletAddress && s.taskId === taskId
+          ? { ...s, status, approvedAt: status === "approved" ? Date.now() : undefined }
+          : s
+      )
     );
-    setSubmissions(updated);
-    saveAdminSubmissions(updated);
+    const res = await setSubmissionStatus(walletAddress, taskId, status);
+    if (!res.ok) {
+      setTxError(res.error ?? "Could not save the review.");
+      void refresh();
+    }
   };
 
   const handleSendTokens = async (participant: ParticipantGroup) => {
@@ -93,13 +108,13 @@ export function AdminPanel({ adminWallet }: { adminWallet: string }) {
     const res = await sendHydrReward(participant.walletAddress, participant.totalReward);
     setSendingTokens(null);
     if (res.ok) {
-      const next = { ...sentWallets, [participant.walletAddress]: res.hash ?? "sent" };
-      setSentWallets(next);
-      localStorage.setItem(REWARDS_SENT_KEY, JSON.stringify(next));
+      setSentWallets((prev) => ({ ...prev, [participant.walletAddress]: res.hash ?? "sent" }));
+      await recordPayout(participant.walletAddress, participant.totalReward, res.hash);
     } else {
       setTxError(res.error ?? "Transaction failed.");
     }
   };
+
 
 
   const groups = groupByParticipant(submissions);
@@ -141,12 +156,18 @@ export function AdminPanel({ adminWallet }: { adminWallet: string }) {
 
 
 
-      {groups.length === 0 ? (
+      {loading ? (
+        <div className="text-center py-12 text-muted-foreground">
+          <Loader2 className="h-8 w-8 mx-auto mb-3 animate-spin opacity-60" />
+          <p className="text-sm">Loading submissions…</p>
+        </div>
+      ) : groups.length === 0 ? (
         <div className="text-center py-12 text-muted-foreground">
           <User className="h-12 w-12 mx-auto mb-3 opacity-30" />
           <p className="text-sm">No submissions yet.</p>
         </div>
       ) : (
+
         <div className="flex flex-col gap-3">
           {groups.map((group) => (
             <div
