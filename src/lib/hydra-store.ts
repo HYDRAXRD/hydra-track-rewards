@@ -450,30 +450,19 @@ export function useHydraStore() {
 
   const submitForReview = useCallback((taskId: string, handle: string, screenshot?: string) => {
     if (!wallet) return;
-    // Save to pending (user state)
+    // Optimistic local state
     setPending((prev) => {
       const next = { ...prev, [taskId]: { handle, screenshot, at: Date.now(), walletAddress: wallet } };
       localStorage.setItem(PENDING_KEY, JSON.stringify(next));
       return next;
     });
-    // Also save to admin submissions list
-    const allSubs = readAdminSubmissions();
-    const existingIdx = allSubs.findIndex(s => s.walletAddress === wallet && s.taskId === taskId);
-    const newSub: AdminSubmission = {
-      walletAddress: wallet,
-      taskId,
-      handle,
-      screenshot,
-      at: Date.now(),
-      status: "pending",
-    };
-    if (existingIdx >= 0) {
-      allSubs[existingIdx] = newSub;
-    } else {
-      allSubs.push(newSub);
-    }
-    saveAdminSubmissions(allSubs);
+    // Persist to the shared cloud database so the admin sees it from any device
+    void (async () => {
+      const { upsertSubmission } = await import("./hydra-db");
+      await upsertSubmission({ walletAddress: wallet, taskId, handle, screenshot });
+    })();
   }, [wallet]);
+
 
   const allTasks = useAllTasks();
   const totalEarned = allTasks.filter((t) => completed[t.id]).reduce(
