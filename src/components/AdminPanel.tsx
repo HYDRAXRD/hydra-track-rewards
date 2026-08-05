@@ -120,6 +120,41 @@ export function AdminPanel({ adminWallet }: { adminWallet: string }) {
   const groups = groupByParticipant(submissions);
   const pendingCount = submissions.filter((s) => s.status === "pending").length;
 
+  if (!unlocked) {
+    return (
+      <div className="glass-card rounded-2xl p-6 flex flex-col gap-4 max-w-md">
+        <div className="flex items-center gap-3">
+          <div className="grid h-10 w-10 place-items-center rounded-xl bg-teal/20">
+            <ShieldCheck className="h-5 w-5" style={{ color: "oklch(0.85 0.15 195)" }} />
+          </div>
+          <div>
+            <h2 className="font-bold text-lg">Admin access</h2>
+            <p className="text-xs text-muted-foreground">
+              Enter the admin key to review submissions and send rewards.
+            </p>
+          </div>
+        </div>
+        <Input
+          type="password"
+          value={secretInput}
+          onChange={(e) => setSecretInput(e.target.value)}
+          placeholder="Admin key"
+        />
+        <Button
+          className="btn-gradient btn-gradient-hover border-0"
+          disabled={!secretInput.trim()}
+          onClick={() => {
+            setAdminSecret(secretInput.trim());
+            setUnlocked(true);
+            void refresh();
+          }}
+        >
+          Unlock admin panel
+        </Button>
+      </div>
+    );
+  }
+
   return (
     <div className="glass-card rounded-2xl p-6 flex flex-col gap-6">
       {/* Header */}
@@ -144,6 +179,17 @@ export function AdminPanel({ adminWallet }: { adminWallet: string }) {
           <Button size="sm" variant="outline" onClick={refresh}>
             Refresh
           </Button>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => {
+              setAdminSecret("");
+              setSecretInput("");
+              setUnlocked(false);
+            }}
+          >
+            Lock
+          </Button>
         </div>
       </div>
 
@@ -153,6 +199,8 @@ export function AdminPanel({ adminWallet }: { adminWallet: string }) {
           <p className="text-xs text-red-300">{txError}</p>
         </div>
       )}
+
+
 
 
 
