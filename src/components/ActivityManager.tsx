@@ -31,6 +31,7 @@ function slugify(s: string) {
 export function ActivityManager() {
   const [tasks, setTasks] = useState<CustomTask[]>([]);
   const [open, setOpen] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
