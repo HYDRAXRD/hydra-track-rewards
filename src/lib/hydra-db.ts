@@ -197,7 +197,7 @@ export async function insertCustomTask(
         reward: task.reward,
         category: task.category,
         iconName: task.iconName,
-        verifyMode: task.verifyMode === "auto" ? "auto" : "manual",
+        verifyMode: task.verifyMode,
         profileLabel: task.profileLabel,
         profilePlaceholder: task.profilePlaceholder,
       },
