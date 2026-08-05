@@ -231,8 +231,13 @@ export function ActivityManager() {
         </div>
       )}
 
+      {error && (
+        <p className="text-xs text-red-400">{error}</p>
+      )}
+
       {tasks.length === 0 ? (
         <p className="text-sm text-muted-foreground">No custom activities yet.</p>
+
 
       ) : (
         <div className="flex flex-col gap-2">
