@@ -25,7 +25,7 @@ export interface Payout {
 /* ------------------------------ admin session ------------------------------ */
 
 const ADMIN_SECRET_KEY = "hydratrack:adminsecret";
-const ADMIN_WALLET_KEY = "hydratrack:wallet:v3";
+const ADMIN_WALLET_KEY = "hydratrack:wallet";
 
 export function setAdminSecret(secret: string) {
   if (typeof window === "undefined") return;
