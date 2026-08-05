@@ -84,7 +84,12 @@ export function ActivityManager() {
       profilePlaceholder: profilePlaceholder.trim() || undefined,
       createdAt: Date.now(),
     };
-    await insertCustomTask(task);
+    const res = await insertCustomTask(task);
+    if (!res.ok) {
+      setError(res.error ?? "Could not create the activity.");
+      return;
+    }
+    setError(null);
     const next = await fetchCustomTasks();
     setTasks(next);
     setCustomTaskCache(next);
@@ -93,11 +98,17 @@ export function ActivityManager() {
   };
 
   const removeTask = async (id: string) => {
-    await deleteCustomTask(id);
+    const res = await deleteCustomTask(id);
+    if (!res.ok) {
+      setError(res.error ?? "Could not delete the activity.");
+      return;
+    }
+    setError(null);
     const next = await fetchCustomTasks();
     setTasks(next);
     setCustomTaskCache(next);
   };
+
 
 
   return (
