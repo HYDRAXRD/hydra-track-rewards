@@ -66,6 +66,8 @@ export function AdminPanel({ adminWallet }: { adminWallet: string }) {
   const [txError, setTxError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [selectedScreenshot, setSelectedScreenshot] = useState<string | null>(null);
+  const [unlocked, setUnlocked] = useState(false);
+  const [secretInput, setSecretInput] = useState("");
 
   const refresh = useCallback(async () => {
     setLoading(true);
@@ -83,7 +85,12 @@ export function AdminPanel({ adminWallet }: { adminWallet: string }) {
   }, []);
 
   useEffect(() => {
-    void refresh();
+    if (getAdminSecret()) {
+      setUnlocked(true);
+      void refresh();
+    } else {
+      setLoading(false);
+    }
   }, [refresh]);
 
   const updateSubmissionStatus = async (walletAddress: string, taskId: string, status: "approved" | "rejected") => {
