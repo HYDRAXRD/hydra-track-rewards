@@ -233,6 +233,7 @@ export function ActivityManager() {
 
       {tasks.length === 0 ? (
         <p className="text-sm text-muted-foreground">No custom activities yet.</p>
+
       ) : (
         <div className="flex flex-col gap-2">
           {tasks.map((t) => (
