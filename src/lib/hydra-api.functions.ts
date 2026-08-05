@@ -175,7 +175,7 @@ export const createCustomTaskFn = createServerFn({ method: "POST" })
         reward: z.number().finite().positive().max(1_000_000_000),
         category: z.enum(["social", "onchain"]),
         iconName: z.string().trim().min(1).max(60),
-        verifyMode: z.enum(["manual", "auto"]).default("manual"),
+        verifyMode: z.enum(["manual", "api", "onchain"]).default("manual"),
         profileLabel: z.string().max(120).optional(),
         profilePlaceholder: z.string().max(120).optional(),
       })
