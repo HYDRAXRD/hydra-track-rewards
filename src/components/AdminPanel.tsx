@@ -2,6 +2,7 @@ import { useState, useCallback, useEffect } from "react";
 import { Check, X, ShieldCheck, Loader2, User, ChevronDown, ChevronUp, ExternalLink, Send, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
 import {
   getAllTasks,
   setCustomTaskCache,
@@ -13,6 +14,8 @@ import {
   fetchCustomTasks,
   setSubmissionStatus,
   recordPayout,
+  setAdminSecret,
+  getAdminSecret,
 } from "@/lib/hydra-db";
 import { sendHydrReward } from "@/lib/rewards";
 import { cn } from "@/lib/utils";
