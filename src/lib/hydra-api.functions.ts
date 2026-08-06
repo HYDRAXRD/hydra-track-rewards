@@ -16,15 +16,15 @@ const adminSchema = z.object({
   adminSecret: z.string().min(1).max(512),
 });
 
-function assertAdmin(input: { adminWallet: string; adminSecret: string }) {
+// Returns false instead of throwing: a thrown error crosses the RPC boundary
+// as an unhandled runtime error and blanks the page.
+function isAdmin(input: { adminWallet: string; adminSecret: string }) {
   const secret = process.env["ADMIN_PANEL_SECRET"];
-  if (!secret) {
-    throw new Error("Admin access is not configured.");
-  }
-  if (input.adminWallet !== ADMIN_WALLET || input.adminSecret !== secret) {
-    throw new Error("Not authorized.");
-  }
+  if (!secret) return false;
+  return input.adminWallet === ADMIN_WALLET && input.adminSecret === secret;
 }
+
+const NOT_AUTHORIZED = { ok: false as const, error: "Not authorized." };
 
 async function admin() {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -86,7 +86,7 @@ export const listMySubmissionsFn = createServerFn({ method: "POST" })
 export const listAllSubmissionsFn = createServerFn({ method: "POST" })
   .inputValidator((data: unknown) => adminSchema.parse(data))
   .handler(async ({ data }) => {
-    assertAdmin(data);
+    if (!isAdmin(data)) return [];
     const db = await admin();
     const { data: rows, error } = await db
       .from("submissions")
@@ -110,7 +110,7 @@ export const setSubmissionStatusFn = createServerFn({ method: "POST" })
       .parse(data),
   )
   .handler(async ({ data }) => {
-    assertAdmin(data);
+    if (!isAdmin(data)) return NOT_AUTHORIZED;
     const db = await admin();
     const { error } = await db
       .from("submissions")
@@ -127,7 +127,7 @@ export const setSubmissionStatusFn = createServerFn({ method: "POST" })
 export const listPayoutsFn = createServerFn({ method: "POST" })
   .inputValidator((data: unknown) => adminSchema.parse(data))
   .handler(async ({ data }) => {
-    assertAdmin(data);
+    if (!isAdmin(data)) return [];
     const db = await admin();
     const { data: rows, error } = await db
       .from("reward_payouts")
@@ -150,7 +150,7 @@ export const recordPayoutFn = createServerFn({ method: "POST" })
       .parse(data),
   )
   .handler(async ({ data }) => {
-    assertAdmin(data);
+    if (!isAdmin(data)) return NOT_AUTHORIZED;
     const db = await admin();
     const { error } = await db.from("reward_payouts").insert({
       wallet_address: data.walletAddress,
@@ -182,7 +182,7 @@ export const createCustomTaskFn = createServerFn({ method: "POST" })
       .parse(data),
   )
   .handler(async ({ data }) => {
-    assertAdmin(data);
+    if (!isAdmin(data)) return NOT_AUTHORIZED;
     const db = await admin();
     const { error } = await db.from("custom_tasks").insert({
       id: data.id,
@@ -208,7 +208,7 @@ export const deleteCustomTaskFn = createServerFn({ method: "POST" })
     adminSchema.extend({ id: taskIdSchema }).parse(data),
   )
   .handler(async ({ data }) => {
-    assertAdmin(data);
+    if (!isAdmin(data)) return NOT_AUTHORIZED;
     const db = await admin();
     const { error } = await db.from("custom_tasks").delete().eq("id", data.id);
     if (error) {
