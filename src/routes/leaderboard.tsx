@@ -63,6 +63,13 @@ function Leaderboard() {
         <p className="mt-3 text-muted-foreground max-w-xl mx-auto">
           Public leaderboard of HydraTrack users by total $HYDR earned. Complete more quests to climb the ranks.
         </p>
+        <button
+          onClick={() => refetch()}
+          className="mt-4 inline-flex items-center gap-2 rounded-full border border-border bg-secondary/50 px-4 py-1.5 text-xs hover:bg-secondary transition-colors"
+        >
+          <RefreshCw className={`h-3.5 w-3.5 ${isFetching ? "animate-spin" : ""}`} />
+          Refresh rankings
+        </button>
       </div>
 
       {wallet && (
@@ -89,6 +96,11 @@ function Leaderboard() {
           <div className="text-right">$HYDR</div>
           <div className="text-right">Tier</div>
         </div>
+        {rows.length === 0 && (
+          <div className="px-5 py-10 text-center text-sm text-muted-foreground">
+            {isFetching ? "Loading rankings…" : "No approved rewards yet. Be the first to complete a quest."}
+          </div>
+        )}
         {rows.map((r, i) => {
           const t = tierFor(r.hydr);
           const isMe = wallet && r.addr === wallet;
