@@ -1,11 +1,12 @@
 import { createFileRoute } from "@tanstack/react-router";
 import {
-  LEADERBOARD_MOCK,
   useHydraStore,
   shortAddr,
   tierFor,
 } from "@/lib/hydra-store";
-import { Trophy, Medal, Award } from "lucide-react";
+import { fetchLeaderboard } from "@/lib/hydra-db";
+import { useQuery } from "@tanstack/react-query";
+import { Trophy, Medal, Award, RefreshCw } from "lucide-react";
 import { useMemo } from "react";
 
 export const Route = createFileRoute("/leaderboard")({
@@ -30,17 +31,25 @@ export const Route = createFileRoute("/leaderboard")({
 function Leaderboard() {
   const { wallet, totalEarned } = useHydraStore();
 
+  const { data, isFetching, refetch } = useQuery({
+    queryKey: ["leaderboard"],
+    queryFn: fetchLeaderboard,
+    refetchOnWindowFocus: true,
+    staleTime: 15_000,
+  });
+
   const rows = useMemo(() => {
-    const base = [...LEADERBOARD_MOCK];
-    if (wallet) {
+    const base = [...(data ?? [])];
+    if (wallet && !base.some((r) => r.addr === wallet)) {
       base.push({ addr: wallet, hydr: totalEarned });
     }
     return base.sort((a, b) => b.hydr - a.hydr).slice(0, 20);
-  }, [wallet, totalEarned]);
+  }, [data, wallet, totalEarned]);
 
   const myRank = wallet
     ? rows.findIndex((r) => r.addr === wallet) + 1
     : 0;
+
 
   return (
     <div className="mx-auto max-w-4xl px-4 py-10">
