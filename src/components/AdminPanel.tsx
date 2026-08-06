@@ -16,6 +16,7 @@ import {
   recordPayout,
   setAdminSecret,
   getAdminSecret,
+  verifyAdminSecret,
 } from "@/lib/hydra-db";
 import { sendHydrReward } from "@/lib/rewards";
 import { cn } from "@/lib/utils";
@@ -68,6 +69,8 @@ export function AdminPanel({ adminWallet }: { adminWallet: string }) {
   const [selectedScreenshot, setSelectedScreenshot] = useState<string | null>(null);
   const [unlocked, setUnlocked] = useState(false);
   const [secretInput, setSecretInput] = useState("");
+  const [secretError, setSecretError] = useState<string | null>(null);
+  const [checkingSecret, setCheckingSecret] = useState(false);
 
   const refresh = useCallback(async () => {
     setLoading(true);
@@ -152,15 +155,26 @@ export function AdminPanel({ adminWallet }: { adminWallet: string }) {
         />
         <Button
           className="btn-gradient btn-gradient-hover border-0"
-          disabled={!secretInput.trim()}
-          onClick={() => {
+          disabled={!secretInput.trim() || checkingSecret}
+          onClick={async () => {
+            setSecretError(null);
+            setCheckingSecret(true);
+            const ok = await verifyAdminSecret(secretInput.trim());
+            setCheckingSecret(false);
+            if (!ok) {
+              setSecretError("Invalid admin key for this wallet.");
+              return;
+            }
             setAdminSecret(secretInput.trim());
             setUnlocked(true);
             void refresh();
           }}
         >
-          Unlock admin panel
+          {checkingSecret ? "Checking…" : "Unlock admin panel"}
         </Button>
+        {secretError && (
+          <p className="text-xs text-red-400">{secretError}</p>
+        )}
       </div>
     );
   }
