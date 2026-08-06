@@ -7,6 +7,7 @@ import {
   submitSubmissionFn,
   listMySubmissionsFn,
   listAllSubmissionsFn,
+  checkAdminFn,
   setSubmissionStatusFn,
   listPayoutsFn,
   recordPayoutFn,
@@ -36,6 +37,22 @@ export function setAdminSecret(secret: string) {
 export function getAdminSecret(): string {
   if (typeof window === "undefined") return "";
   return localStorage.getItem(ADMIN_SECRET_KEY) ?? "";
+}
+
+export async function verifyAdminSecret(secret: string): Promise<boolean> {
+  try {
+    const wallet =
+      typeof window === "undefined"
+        ? ""
+        : localStorage.getItem(ADMIN_WALLET_KEY) ?? "";
+    const res = await checkAdminFn({
+      data: { adminWallet: wallet, adminSecret: secret },
+    });
+    return res.ok;
+  } catch (e) {
+    console.error("[hydra-db] verifyAdminSecret", e);
+    return false;
+  }
 }
 
 function adminCreds() {

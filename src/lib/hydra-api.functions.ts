@@ -83,6 +83,10 @@ export const listMySubmissionsFn = createServerFn({ method: "POST" })
 
 /* ----------------------------------- admin ---------------------------------- */
 
+export const checkAdminFn = createServerFn({ method: "POST" })
+  .inputValidator((data: unknown) => adminSchema.parse(data))
+  .handler(async ({ data }) => ({ ok: isAdmin(data) }));
+
 export const listAllSubmissionsFn = createServerFn({ method: "POST" })
   .inputValidator((data: unknown) => adminSchema.parse(data))
   .handler(async ({ data }) => {
