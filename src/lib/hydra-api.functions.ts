@@ -221,3 +221,34 @@ export const deleteCustomTaskFn = createServerFn({ method: "POST" })
     }
     return { ok: true as const };
   });
+
+/* -------------------------------- leaderboard ------------------------------- */
+
+// Public: aggregates approved submissions per wallet using the reward value of
+// each task (base catalog + admin-created activities).
+export const getLeaderboardFn = createServerFn({ method: "GET" }).handler(
+  async () => {
+    const db = await admin();
+    const [subs, custom] = await Promise.all([
+      db.from("submissions").select("wallet_address,task_id").eq("status", "approved"),
+      db.from("custom_tasks").select("id,reward"),
+    ]);
+    if (subs.error) {
+      console.error("[hydra-api] getLeaderboard", subs.error);
+      return [];
+    }
+    const rewards = new Map<string, number>();
+    for (const t of BASE_TASK_REWARDS) rewards.set(t.id, t.reward);
+    for (const c of custom.data ?? []) rewards.set(c.id, Number(c.reward));
+
+    const totals = new Map<string, number>();
+    for (const row of subs.data ?? []) {
+      const value = rewards.get(row.task_id) ?? 0;
+      totals.set(row.wallet_address, (totals.get(row.wallet_address) ?? 0) + value);
+    }
+    return [...totals.entries()]
+      .map(([addr, hydr]) => ({ addr, hydr }))
+      .sort((a, b) => b.hydr - a.hydr)
+      .slice(0, 50);
+  },
+);
