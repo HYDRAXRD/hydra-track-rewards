@@ -4,6 +4,7 @@
 // can be authorized on the server instead of trusting the browser.
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
+import { TASKS } from "@/lib/hydra-store";
 
 const ADMIN_WALLET =
   "account_rdx129mjzn6j04zy5c7jq447y6r60485z7sd3zvqxah0jfv70k36en8vt9";
@@ -221,3 +222,34 @@ export const deleteCustomTaskFn = createServerFn({ method: "POST" })
     }
     return { ok: true as const };
   });
+
+/* -------------------------------- leaderboard ------------------------------- */
+
+// Public: aggregates approved submissions per wallet using the reward value of
+// each task (base catalog + admin-created activities).
+export const getLeaderboardFn = createServerFn({ method: "GET" }).handler(
+  async () => {
+    const db = await admin();
+    const [subs, custom] = await Promise.all([
+      db.from("submissions").select("wallet_address,task_id").eq("status", "approved"),
+      db.from("custom_tasks").select("id,reward"),
+    ]);
+    if (subs.error) {
+      console.error("[hydra-api] getLeaderboard", subs.error);
+      return [];
+    }
+    const rewards = new Map<string, number>();
+    for (const t of TASKS) rewards.set(t.id, t.reward);
+    for (const c of custom.data ?? []) rewards.set(c.id, Number(c.reward));
+
+    const totals = new Map<string, number>();
+    for (const row of subs.data ?? []) {
+      const value = rewards.get(row.task_id) ?? 0;
+      totals.set(row.wallet_address, (totals.get(row.wallet_address) ?? 0) + value);
+    }
+    return [...totals.entries()]
+      .map(([addr, hydr]) => ({ addr, hydr }))
+      .sort((a, b) => b.hydr - a.hydr)
+      .slice(0, 50);
+  },
+);

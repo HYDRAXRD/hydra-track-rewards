@@ -13,6 +13,7 @@ import {
   recordPayoutFn,
   createCustomTaskFn,
   deleteCustomTaskFn,
+  getLeaderboardFn,
 } from "@/lib/hydra-api.functions";
 import type { AdminSubmission, CustomTask, TaskCategory } from "./hydra-store";
 
@@ -233,5 +234,21 @@ export async function deleteCustomTask(
   } catch (e) {
     console.error("[hydra-db] deleteCustomTask", e);
     return { ok: false, error: "Not authorized to delete activities." };
+  }
+}
+
+/* -------------------------------- leaderboard ------------------------------- */
+
+export interface LeaderboardRow {
+  addr: string;
+  hydr: number;
+}
+
+export async function fetchLeaderboard(): Promise<LeaderboardRow[]> {
+  try {
+    return (await getLeaderboardFn()) as LeaderboardRow[];
+  } catch (e) {
+    console.error("[hydra-db] fetchLeaderboard", e);
+    return [];
   }
 }
