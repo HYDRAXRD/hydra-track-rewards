@@ -21,12 +21,10 @@ export function isAccountAddress(addr: string): boolean {
 
 export function buildRewardManifest(recipient: string, amount: number): string {
   const dec = toDecimalString(amount);
+  // NOTE: no `lock_fee` instruction — the Radix Wallet rejects dApp manifests
+  // that lock the fee themselves ("forbidden instructions"); it adds the fee
+  // payment itself when the user reviews the transaction.
   return `CALL_METHOD
-    Address("${ADMIN_WALLET}")
-    "lock_fee"
-    Decimal("5")
-;
-CALL_METHOD
     Address("${ADMIN_WALLET}")
     "withdraw"
     Address("${HYDR_RESOURCE_ADDRESS}")
@@ -41,10 +39,11 @@ CALL_METHOD
     Address("${recipient}")
     "try_deposit_or_abort"
     Bucket("reward_bucket")
-    None
+    Enum<0u8>()
 ;
 `;
 }
+
 
 export async function sendHydrReward(
   recipient: string,
