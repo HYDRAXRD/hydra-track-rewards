@@ -4,6 +4,7 @@
 // can be authorized on the server instead of trusting the browser.
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
+import { TASKS } from "@/lib/hydra-store";
 
 const ADMIN_WALLET =
   "account_rdx129mjzn6j04zy5c7jq447y6r60485z7sd3zvqxah0jfv70k36en8vt9";
@@ -238,7 +239,7 @@ export const getLeaderboardFn = createServerFn({ method: "GET" }).handler(
       return [];
     }
     const rewards = new Map<string, number>();
-    for (const t of BASE_TASK_REWARDS) rewards.set(t.id, t.reward);
+    for (const t of TASKS) rewards.set(t.id, t.reward);
     for (const c of custom.data ?? []) rewards.set(c.id, Number(c.reward));
 
     const totals = new Map<string, number>();
