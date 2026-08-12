@@ -47,23 +47,25 @@ export default {
   async fetch(request: Request, env: any, ctx: unknown) {
     const url = new URL(request.url);
 
-    // 1. ASSETS NATIVOS CLOUDFLARE (PASSAGEM 1:1)
+    // 1. INTERCEPTAÇÃO DE ASSETS COM TRAVA DE SEGURANÇA DUPLA
     if (env && env.ASSETS) {
       if (url.pathname.includes("/assets/") || url.pathname.match(/\.(png|jpg|jpeg|svg|ico|css|js)$/)) {
         try {
-          // Passamos a request.url como string INTACTA.
-          // O Cloudflare vai achar o arquivo porque o Vite criou a pasta /track/ no output.
-          const assetResponse = await env.ASSETS.fetch(request.url);
-          if (assetResponse && assetResponse.status < 400) {
-            return assetResponse;
-          }
+          // Tentativa 1: Busca o caminho exato gerado pelo Vite (ex: /track/assets/styles.css)
+          let assetResponse = await env.ASSETS.fetch(request.url);
+          if (assetResponse && assetResponse.status < 400) return assetResponse;
+
+          // Tentativa 2: Busca na raiz caso o Nitro tenha ignorado a base do Vite (ex: /assets/styles.css)
+          const cleanUrl = new URL(url.pathname.replace(/^\/track/, ""), request.url);
+          assetResponse = await env.ASSETS.fetch(cleanUrl.toString());
+          if (assetResponse && assetResponse.status < 400) return assetResponse;
         } catch (e) {
-          // Ignora e tenta o router
+          // Se não achar no ASSETS, deixa o router tentar
         }
       }
     }
 
-    // 2. ROUTER TANSTACK START (HTML)
+    // 2. ROTEAMENTO NORMAL TANSTACK
     try {
       const handler = await getServerEntry();
       const response = await handler.fetch(request, env, ctx);
