@@ -1,5 +1,4 @@
 import { useEffect, useState, useCallback } from "react";
-import { createClientOnlyFn } from "@tanstack/react-start";
 import {
   Twitter,
   Instagram,
@@ -324,48 +323,20 @@ export function useHydraStore() {
   const [completed, setCompleted] = useState<Record<string, number>>({});
   const [pending, setPending] = useState<Record<string, PendingSubmission>>({});
   const [hydrated, setHydrated] = useState(false);
-  const [connecting, setConnecting] = useState(false);
-  const [connectError, setConnectError] = useState<string | null>(null);
 
   const isAdmin = wallet === ADMIN_WALLET;
 
   useEffect(() => {
     setCompleted(readCompleted());
     setPending(readPending());
+    setWallet(readWallet());
     setHydrated(true);
-
-    let unsub: (() => void) | undefined;
-    let cancelled = false;
-
-    const initWallet = async () => {
-      try {
-        const rdt = await loadRadixToolkit();
-        
-        if (cancelled || !rdt) return;
-        
-        const sub = rdt.walletApi.walletData$.subscribe((data) => {
-          const addr = data?.accounts?.[0]?.address ?? null;
-          if (addr) {
-            localStorage.setItem(WALLET_KEY, addr);
-            setWallet(addr);
-            setConnectError(null);
-          } else {
-            localStorage.removeItem(WALLET_KEY);
-            setWallet(null);
-          }
-        });
-        unsub = () => sub.unsubscribe();
-      } catch (e: any) {
-        console.error("Failed to load Radix toolkit", e);
-        setConnectError("Wallet connector failed to load.");
-      }
-    };
-
-    initWallet();
-
+    const syncWallet = () => setWallet(readWallet());
+    window.addEventListener("hydratrack:wallet-changed", syncWallet);
+    window.addEventListener("storage", syncWallet);
     return () => {
-      cancelled = true;
-      unsub?.();
+      window.removeEventListener("hydratrack:wallet-changed", syncWallet);
+      window.removeEventListener("storage", syncWallet);
     };
   }, []);
 
@@ -402,39 +373,6 @@ export function useHydraStore() {
     };
   }, [wallet]);
 
-
-
-  const connect = useCallback(async () => {
-    setConnecting(true);
-    setConnectError(null);
-    try {
-      const rdt = await loadRadixToolkit();
-      if (!rdt) {
-        setConnectError("Radix Wallet Connector unavailable in this environment.");
-        return null;
-      }
-      const result = await rdt.walletApi.sendRequest();
-      if (result.isErr()) {
-        const err = result.error as { error?: string; message?: string } | undefined;
-        setConnectError(err?.message || err?.error || "Wallet request was cancelled.");
-        return null;
-      }
-      return result.value?.accounts?.[0]?.address ?? null;
-    } catch (e: any) {
-      setConnectError(e?.message || "Could not connect to the Radix Wallet.");
-      return null;
-    } finally {
-      setConnecting(false);
-    }
-  }, []);
-
-  const disconnect = useCallback(async () => {
-    const rdt = await loadRadixToolkit();
-    rdt?.disconnect();
-    localStorage.removeItem(WALLET_KEY);
-    setWallet(null);
-    setConnectError(null);
-  }, []);
 
   const completeTask = useCallback((taskId: string) => {
     setCompleted((prev) => {
@@ -487,12 +425,8 @@ export function useHydraStore() {
     completedCount,
     pendingCount,
     progress,
-    connect,
-    disconnect,
     completeTask,
     submitForReview,
-    connecting,
-    connectError,
     isAdmin,
   };
 }
@@ -521,7 +455,3 @@ export const LEADERBOARD_MOCK = [
   { addr: "rdx1qspd55r…hydra09", hydr: 0 },
   { addr: "rdx1qspe14y…hydra10", hydr: 0 },
 ];
-const loadRadixToolkit = createClientOnlyFn(async () => {
-  const { getRdt } = await import("./radix.client");
-  return getRdt();
-});
