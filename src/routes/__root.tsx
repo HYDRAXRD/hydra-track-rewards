@@ -98,7 +98,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     ],
     links: [
       { rel: "stylesheet", href: appCss },
-      { rel: "icon", href: "/hydra-logo.png", type: "image/png" },
+      { rel: "icon", href: "/track/hydra-logo.png", type: "image/png" },
     ],
   }),
   shellComponent: RootShell,

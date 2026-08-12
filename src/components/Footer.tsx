@@ -14,7 +14,7 @@ export function Footer() {
       <div className="mx-auto max-w-6xl px-4 py-10 grid gap-8 md:grid-cols-3">
         <div>
           <div className="flex items-center gap-2 font-bold text-lg">
-            <img src="/hydra-logo.png" alt="HydraTrack" className="h-9 w-9 rounded-xl object-contain" />
+            <img src="/track/hydra-logo.png" alt="HydraTrack" className="h-9 w-9 rounded-xl object-contain" />
             <span className="gradient-text">HydraTrack</span>
           </div>
           <p className="mt-3 text-sm text-muted-foreground max-w-xs">
