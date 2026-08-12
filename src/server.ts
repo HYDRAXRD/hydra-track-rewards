@@ -50,22 +50,25 @@ export default {
     const url = new URL(request.url);
 
     // 1. Interceptar arquivos estáticos (CSS, JS, Imagens) ANTES do Nitro
-    if (url.pathname.startsWith('/track/assets/') || url.pathname.match(/\.(png|jpg|svg|ico)$/)) {
-      // Remove o '/track' para buscar o arquivo real que está no raiz do ASSETS
+    if (url.pathname.startsWith('/track/assets/') || url.pathname.match(/\.(png|jpg|jpeg|svg|ico|css|js)$/)) {
+      // Remove o '/track' para buscar o arquivo real que o Vite colocou na raiz
       const cleanPath = url.pathname.replace(/^\/track/, '');
       const assetUrl = new URL(cleanPath, request.url);
-
-      if (env.ASSETS) {
-        // Busca o arquivo direto do Cloudflare
-        const assetResponse = await env.ASSETS.fetch(new Request(assetUrl, request));
-        // Se encontrou o arquivo, devolve na hora. Zero redirects.
-        if (assetResponse.status < 400) {
-          return assetResponse;
+      
+      if (env && env.ASSETS) {
+        try {
+          // Passar APENAS a string da URL evita o Erro 500 do Cloudflare ao tentar clonar o Request do navegador
+          const assetResponse = await env.ASSETS.fetch(assetUrl.toString());
+          if (assetResponse && assetResponse.status < 400) {
+            return assetResponse;
+          }
+        } catch (e) {
+          // Se falhar silenciosamente, deixa o Nitro tentar resolver abaixo
         }
       }
     }
 
-    // 2. Roteamento normal do TanStack Start para as páginas HTML
+    // 2. Roteamento normal do TanStack Start
     try {
       const handler = await getServerEntry();
       const response = await handler.fetch(request, env, ctx);
