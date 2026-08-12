@@ -1,6 +1,5 @@
 import "./polyfill";
 import "./lib/error-capture";
-
 import { consumeLastCapturedError } from "./lib/error-capture";
 import { renderErrorPage } from "./lib/error-page";
 
@@ -47,25 +46,29 @@ export default {
   async fetch(request: Request, env: any, ctx: unknown) {
     const url = new URL(request.url);
 
-    // 1. INTERCEPTAÇÃO DE ASSETS COM TRAVA DE SEGURANÇA DUPLA
+    // 1. CORREÇÃO CIRÚRGICA DE CAMINHOS DOS ASSETS (MIME TYPE FIX)
     if (env && env.ASSETS) {
-      if (url.pathname.includes("/assets/") || url.pathname.match(/\.(png|jpg|jpeg|svg|ico|css|js)$/)) {
+      if (url.pathname.startsWith('/track/assets/') || url.pathname === '/track/hydra-logo.png') {
         try {
-          // Tentativa 1: Busca o caminho exato gerado pelo Vite (ex: /track/assets/styles.css)
-          let assetResponse = await env.ASSETS.fetch(request.url);
-          if (assetResponse && assetResponse.status < 400) return assetResponse;
-
-          // Tentativa 2: Busca na raiz caso o Nitro tenha ignorado a base do Vite (ex: /assets/styles.css)
-          const cleanUrl = new URL(url.pathname.replace(/^\/track/, ""), request.url);
-          assetResponse = await env.ASSETS.fetch(cleanUrl.toString());
-          if (assetResponse && assetResponse.status < 400) return assetResponse;
+          // O HTML pede /track/assets/..., mas o arquivo físico está em /assets/...
+          // Removemos o '/track' do caminho
+          const cleanPath = url.pathname.replace(/^\/track/, '');
+          const assetUrl = new URL(cleanPath, request.url);
+          
+          // O SEGREDO: Buscar usando APENAS a string da URL evita o Erro 500 do Cloudflare.
+          // O Cloudflare agora vai encontrar o arquivo físico e retornar com o MIME type correto (200 OK)
+          const assetResponse = await env.ASSETS.fetch(assetUrl.toString());
+          
+          if (assetResponse && assetResponse.status === 200) {
+            return assetResponse;
+          }
         } catch (e) {
-          // Se não achar no ASSETS, deixa o router tentar
+          console.error("Erro ao buscar asset interno:", e);
         }
       }
     }
 
-    // 2. ROTEAMENTO NORMAL TANSTACK
+    // 2. ROTEAMENTO NORMAL TANSTACK PARA PÁGINAS HTML
     try {
       const handler = await getServerEntry();
       const response = await handler.fetch(request, env, ctx);
