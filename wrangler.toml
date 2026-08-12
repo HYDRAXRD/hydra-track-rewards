@@ -1,0 +1,26 @@
+name = "hydra-track-rewards"
+compatibility_date = "2024-04-05"
+
+[[routes]]
+pattern = "hydraxrd.com/track/*"
+zone_name = "hydraxrd.com"
+
+[[routes]]
+pattern = "www.hydraxrd.com/track/*"
+zone_name = "hydraxrd.com"
+
+[[routes]]
+pattern = "hydraxrd.com/track"
+zone_name = "hydraxrd.com"
+
+[[routes]]
+pattern = "www.hydraxrd.com/track"
+zone_name = "hydraxrd.com"
+
+[vars]
+SUPABASE_PROJECT_ID = "agynbpcazpcfubzuoncg"
+SUPABASE_PUBLISHABLE_KEY = "sb_publishable_H6BWRM7XQMoNtFJOhTkJTg_VzItB9t2"
+SUPABASE_URL = "https://agynbpcazpcfubzuoncg.supabase.co"
+VITE_SUPABASE_PROJECT_ID = "agynbpcazpcfubzuoncg"
+VITE_SUPABASE_PUBLISHABLE_KEY = "sb_publishable_H6BWRM7XQMoNtFJOhTkJTg_VzItB9t2"
+VITE_SUPABASE_URL = "https://agynbpcazpcfubzuoncg.supabase.co"
