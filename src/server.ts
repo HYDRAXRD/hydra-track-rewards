@@ -19,8 +19,6 @@ async function getServerEntry(): Promise<ServerEntry> {
   return serverEntryPromise;
 }
 
-// h3 swallows in-handler throws into a normal 500 Response with body
-// {"unhandled":true,"message":"HTTPError"} — try/catch alone never fires for those.
 async function normalizeCatastrophicSsrResponse(response: Response): Promise<Response> {
   if (response.status < 500) return response;
   const contentType = response.headers.get("content-type") ?? "";
@@ -49,26 +47,31 @@ export default {
   async fetch(request: Request, env: any, ctx: unknown) {
     const url = new URL(request.url);
 
-    // 1. Interceptar arquivos estáticos (CSS, JS, Imagens) ANTES do Nitro
-    if (url.pathname.startsWith('/track/assets/') || url.pathname.match(/\.(png|jpg|jpeg|svg|ico|css|js)$/)) {
-      // Remove o '/track' para buscar o arquivo real que o Vite colocou na raiz
-      const cleanPath = url.pathname.replace(/^\/track/, '');
-      const assetUrl = new URL(cleanPath, request.url);
-      
-      if (env && env.ASSETS) {
-        try {
-          // Passar APENAS a string da URL evita o Erro 500 do Cloudflare ao tentar clonar o Request do navegador
-          const assetResponse = await env.ASSETS.fetch(assetUrl.toString());
-          if (assetResponse && assetResponse.status < 400) {
+    // 1. TENTA SERVIR ASSETS DIRETAMENTE DO CLOUDFLARE
+    if (env && env.ASSETS) {
+      try {
+         // O Vite coloca os arquivos compilados na raiz (ex: /assets/styles.css)
+         // Precisamos remover o /track da URL para que o ASSETS encontre o arquivo
+         let assetPath = url.pathname;
+         if (assetPath.startsWith('/track')) {
+            assetPath = assetPath.substring(6); // remove '/track'
+         }
+
+         // Cria uma nova URL apontando para a raiz do domínio
+         const assetUrl = new URL(assetPath, request.url);
+         
+         // Faz o fetch direto no binding do Cloudflare usando a nova Request clonada, mas com a URL corrigida
+         const assetResponse = await env.ASSETS.fetch(new Request(assetUrl.toString(), request));
+
+         if (assetResponse && assetResponse.status < 400) {
             return assetResponse;
-          }
-        } catch (e) {
-          // Se falhar silenciosamente, deixa o Nitro tentar resolver abaixo
-        }
+         }
+      } catch (e) {
+         // Falhou em achar o asset estático, segue pro roteador
       }
     }
 
-    // 2. Roteamento normal do TanStack Start
+    // 2. ROTEAMENTO NORMAL TANSTACK
     try {
       const handler = await getServerEntry();
       const response = await handler.fetch(request, env, ctx);
