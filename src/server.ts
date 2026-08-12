@@ -46,7 +46,26 @@ function isH3SwallowedErrorBody(body: string): boolean {
 }
 
 export default {
-  async fetch(request: Request, env: unknown, ctx: unknown) {
+  async fetch(request: Request, env: any, ctx: unknown) {
+    const url = new URL(request.url);
+
+    // 1. Interceptar arquivos estáticos (CSS, JS, Imagens) ANTES do Nitro
+    if (url.pathname.startsWith('/track/assets/') || url.pathname.match(/\.(png|jpg|svg|ico)$/)) {
+      // Remove o '/track' para buscar o arquivo real que está no raiz do ASSETS
+      const cleanPath = url.pathname.replace(/^\/track/, '');
+      const assetUrl = new URL(cleanPath, request.url);
+
+      if (env.ASSETS) {
+        // Busca o arquivo direto do Cloudflare
+        const assetResponse = await env.ASSETS.fetch(new Request(assetUrl, request));
+        // Se encontrou o arquivo, devolve na hora. Zero redirects.
+        if (assetResponse.status < 400) {
+          return assetResponse;
+        }
+      }
+    }
+
+    // 2. Roteamento normal do TanStack Start para as páginas HTML
     try {
       const handler = await getServerEntry();
       const response = await handler.fetch(request, env, ctx);
