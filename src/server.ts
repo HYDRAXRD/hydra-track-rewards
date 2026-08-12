@@ -44,37 +44,7 @@ function isH3SwallowedErrorBody(body: string): boolean {
 }
 
 export default {
-  async fetch(request: Request, env: any, ctx: unknown) {
-    const url = new URL(request.url);
-
-    // 1. TENTA SERVIR ASSETS DIRETAMENTE DO CLOUDFLARE
-    if (env && env.ASSETS) {
-      try {
-        // O Vite coloca os arquivos compilados na raiz (ex: /assets/styles.css)
-        // Precisamos remover o /track da URL para que o ASSETS encontre o arquivo
-        let assetPath = url.pathname;
-        if (assetPath.startsWith("/track")) {
-          assetPath = assetPath.substring(6); // remove '/track'
-        }
-
-        const attempts = [
-          assetPath,
-          assetPath.startsWith("/") ? assetPath.slice(1) : `/${assetPath}`,
-        ];
-
-        for (const path of attempts) {
-          const assetUrl = new URL(path, request.url);
-          const assetResponse = await env.ASSETS.fetch(new Request(assetUrl.toString(), request));
-          if (assetResponse && assetResponse.status < 400) {
-            return assetResponse;
-          }
-        }
-      } catch (e) {
-        // Falhou em achar o asset estático, segue pro roteador
-      }
-    }
-
-    // 2. ROTEAMENTO NORMAL TANSTACK
+  async fetch(request: Request, env: unknown, ctx: unknown) {
     try {
       const handler = await getServerEntry();
       const response = await handler.fetch(request, env, ctx);
