@@ -1,4 +1,3 @@
-import { useEffect } from "react";
 import { useHydraStore } from "@/lib/hydra-store";
 import { AlertCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -30,12 +29,6 @@ export function ConnectButton({
   fullWidth = false,
 }: ConnectButtonProps) {
   const { connectError } = useHydraStore();
-
-  // Ensure the Radix dApp Toolkit is initialized so the <radix-connect-button>
-  // custom element is registered by the toolkit.
-  useEffect(() => {
-    import("@/lib/radix").then(({ getRdt }) => getRdt()).catch(() => {});
-  }, []);
 
   return (
     <div

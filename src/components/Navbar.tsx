@@ -1,6 +1,6 @@
 import { Link } from "@tanstack/react-router";
-import { ConnectButton } from "@/components/ConnectButton";
 import { useState } from "react";
+import { ClientConnectButton } from "@/components/ClientConnectButton";
 
 export function Navbar() {
   const [open, setOpen] = useState(false);
@@ -34,7 +34,7 @@ export function Navbar() {
         </nav>
 
         <div className="flex items-center gap-2">
-          <ConnectButton />
+          <ClientConnectButton />
 
           <button
             className="md:hidden p-2 rounded-md hover:bg-secondary"

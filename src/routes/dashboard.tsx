@@ -3,7 +3,7 @@ import { useHydraStore, useAllTasks } from "@/lib/hydra-store";
 import { TaskCard } from "@/components/TaskCard";
 import { AdminPanel } from "@/components/AdminPanel";
 import { ActivityManager } from "@/components/ActivityManager";
-import { ConnectButton } from "@/components/ConnectButton";
+import { ClientConnectButton } from "@/components/ClientConnectButton";
 import { Loader2 } from "lucide-react";
 
 export const Route = createFileRoute("/dashboard")({
@@ -46,7 +46,7 @@ function DashboardPage() {
         <p className="text-lg text-muted-foreground mb-6">
           Connect your Radix wallet to view the dashboard.
         </p>
-        <ConnectButton />
+        <ClientConnectButton />
       </div>
     );
   }

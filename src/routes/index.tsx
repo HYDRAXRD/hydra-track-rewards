@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
 import { useHydraStore, TASKS, TOTAL_REWARDS, shortAddr } from "@/lib/hydra-store";
-import { ConnectButton } from "@/components/ConnectButton";
+import { ClientConnectButton } from "@/components/ClientConnectButton";
 import {
   Wallet,
   Trophy,
@@ -66,7 +66,7 @@ function Landing() {
                 </Link>
               </Button>
             ) : (
-              <ConnectButton size="lg" />
+              <ClientConnectButton size="lg" />
             )}
             <Button asChild size="lg" variant="outline">
               <Link to="/about">Learn about HYDRA</Link>
@@ -208,7 +208,7 @@ function Landing() {
               <Link to="/dashboard">Go to Dashboard <ArrowRight className="h-4 w-4" /></Link>
             </Button>
           ) : (
-            <ConnectButton size="lg" />
+            <ClientConnectButton size="lg" />
           )}
           <Button asChild size="lg" variant="outline">
             <Link to="/leaderboard">View Leaderboard</Link>

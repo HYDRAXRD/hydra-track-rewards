@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback } from "react";
+import { createClientOnlyFn } from "@tanstack/react-start";
 import {
   Twitter,
   Instagram,
@@ -338,8 +339,7 @@ export function useHydraStore() {
 
     const initWallet = async () => {
       try {
-        const { getRdt } = await import("./radix");
-        const rdt = await getRdt(); 
+        const rdt = await loadRadixToolkit();
         
         if (cancelled || !rdt) return;
         
@@ -408,8 +408,7 @@ export function useHydraStore() {
     setConnecting(true);
     setConnectError(null);
     try {
-      const { getRdt } = await import("./radix");
-      const rdt = getRdt();
+      const rdt = await loadRadixToolkit();
       if (!rdt) {
         setConnectError("Radix Wallet Connector unavailable in this environment.");
         return null;
@@ -430,8 +429,7 @@ export function useHydraStore() {
   }, []);
 
   const disconnect = useCallback(async () => {
-    const { getRdt } = await import("./radix");
-    const rdt = getRdt();
+    const rdt = await loadRadixToolkit();
     rdt?.disconnect();
     localStorage.removeItem(WALLET_KEY);
     setWallet(null);
@@ -523,3 +521,7 @@ export const LEADERBOARD_MOCK = [
   { addr: "rdx1qspd55r…hydra09", hydr: 0 },
   { addr: "rdx1qspe14y…hydra10", hydr: 0 },
 ];
+const loadRadixToolkit = createClientOnlyFn(async () => {
+  const { getRdt } = await import("./radix.client");
+  return getRdt();
+});
