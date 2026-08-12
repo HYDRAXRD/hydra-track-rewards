@@ -50,24 +50,27 @@ export default {
     // 1. TENTA SERVIR ASSETS DIRETAMENTE DO CLOUDFLARE
     if (env && env.ASSETS) {
       try {
-         // O Vite coloca os arquivos compilados na raiz (ex: /assets/styles.css)
-         // Precisamos remover o /track da URL para que o ASSETS encontre o arquivo
-         let assetPath = url.pathname;
-         if (assetPath.startsWith('/track')) {
-            assetPath = assetPath.substring(6); // remove '/track'
-         }
+        // O Vite coloca os arquivos compilados na raiz (ex: /assets/styles.css)
+        // Precisamos remover o /track da URL para que o ASSETS encontre o arquivo
+        let assetPath = url.pathname;
+        if (assetPath.startsWith("/track")) {
+          assetPath = assetPath.substring(6); // remove '/track'
+        }
 
-         // Cria uma nova URL apontando para a raiz do domínio
-         const assetUrl = new URL(assetPath, request.url);
-         
-         // Faz o fetch direto no binding do Cloudflare usando a nova Request clonada, mas com a URL corrigida
-         const assetResponse = await env.ASSETS.fetch(new Request(assetUrl.toString(), request));
+        const attempts = [
+          assetPath,
+          assetPath.startsWith("/") ? assetPath.slice(1) : `/${assetPath}`,
+        ];
 
-         if (assetResponse && assetResponse.status < 400) {
+        for (const path of attempts) {
+          const assetUrl = new URL(path, request.url);
+          const assetResponse = await env.ASSETS.fetch(new Request(assetUrl.toString(), request));
+          if (assetResponse && assetResponse.status < 400) {
             return assetResponse;
-         }
+          }
+        }
       } catch (e) {
-         // Falhou em achar o asset estático, segue pro roteador
+        // Falhou em achar o asset estático, segue pro roteador
       }
     }
 
