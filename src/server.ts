@@ -48,17 +48,8 @@ function isH3SwallowedErrorBody(body: string): boolean {
 export default {
   async fetch(request: Request, env: unknown, ctx: unknown) {
     try {
-      let reqToProcess = request;
-      const url = new URL(request.url);
-
-      // REWRITE DE ASSETS: Remove o '/track' para o Cloudflare encontrar os arquivos estáticos e imagens
-      if (url.pathname.startsWith("/track/assets/") || url.pathname.includes(".png") || url.pathname.includes(".jpg")) {
-        url.pathname = url.pathname.replace("/track", "");
-        reqToProcess = new Request(url.toString(), request);
-      }
-
       const handler = await getServerEntry();
-      const response = await handler.fetch(reqToProcess, env, ctx);
+      const response = await handler.fetch(request, env, ctx);
       return await normalizeCatastrophicSsrResponse(response);
     } catch (error) {
       console.error(error);
