@@ -336,26 +336,32 @@ export function useHydraStore() {
     let unsub: (() => void) | undefined;
     let cancelled = false;
 
-    import("./radix").then(({ getRdt }) => {
-      if (cancelled) return;
-      const rdt = getRdt();
-      if (!rdt) return;
-      const sub = rdt.walletApi.walletData$.subscribe((data) => {
-        const addr = data?.accounts?.[0]?.address ?? null;
-        if (addr) {
-          localStorage.setItem(WALLET_KEY, addr);
-          setWallet(addr);
-          setConnectError(null);
-        } else {
-          localStorage.removeItem(WALLET_KEY);
-          setWallet(null);
-        }
-      });
-      unsub = () => sub.unsubscribe();
-    }).catch((e) => {
-      console.error("Failed to load Radix toolkit", e);
-      setConnectError("Wallet connector failed to load.");
-    });
+    const initWallet = async () => {
+      try {
+        const { getRdt } = await import("./radix");
+        const rdt = await getRdt(); 
+        
+        if (cancelled || !rdt) return;
+        
+        const sub = rdt.walletApi.walletData$.subscribe((data) => {
+          const addr = data?.accounts?.[0]?.address ?? null;
+          if (addr) {
+            localStorage.setItem(WALLET_KEY, addr);
+            setWallet(addr);
+            setConnectError(null);
+          } else {
+            localStorage.removeItem(WALLET_KEY);
+            setWallet(null);
+          }
+        });
+        unsub = () => sub.unsubscribe();
+      } catch (e: any) {
+        console.error("Failed to load Radix toolkit", e);
+        setConnectError("Wallet connector failed to load.");
+      }
+    };
+
+    initWallet();
 
     return () => {
       cancelled = true;
