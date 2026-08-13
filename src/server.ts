@@ -46,20 +46,13 @@ export default {
   async fetch(request: Request, env: any, ctx: unknown) {
     const url = new URL(request.url);
 
-    // 1. CORREÇÃO CIRÚRGICA DE CAMINHOS DOS ASSETS (MIME TYPE FIX)
     if (env && env.ASSETS) {
-      if (url.pathname.startsWith('/track/assets/') || url.pathname === '/track/hydra-logo.png') {
+      if (url.pathname.startsWith("/track/assets/") || url.pathname === "/track/hydra-logo.png") {
         try {
-          // O HTML pede /track/assets/..., mas o arquivo físico está em /assets/...
-          // Removemos o '/track' do caminho
-          const cleanPath = url.pathname.replace(/^\/track/, '');
-          const assetUrl = new URL(cleanPath, request.url);
-          
-          // O SEGREDO: Buscar usando APENAS a string da URL evita o Erro 500 do Cloudflare.
-          // O Cloudflare agora vai encontrar o arquivo físico e retornar com o MIME type correto (200 OK)
-          const assetResponse = await env.ASSETS.fetch(assetUrl.toString());
-          
-          if (assetResponse && assetResponse.status === 200) {
+          const assetResponse = await env.ASSETS.fetch(request);
+
+
+          if (assetResponse && assetResponse.ok) {
             return assetResponse;
           }
         } catch (e) {

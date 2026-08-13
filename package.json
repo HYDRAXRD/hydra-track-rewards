@@ -5,7 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "vite dev",
-    "build": "vite build",
+    "build": "vite build && bun run arrange-assets",
+    "arrange-assets": "mkdir -p .output/public/track && cp -r .output/public/assets .output/public/track/ && cp .output/public/hydra-logo.png .output/public/track/ || true",
     "build:dev": "vite build --mode development",
     "preview": "vite preview",
     "lint": "eslint .",
