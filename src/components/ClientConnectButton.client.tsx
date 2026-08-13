@@ -3,69 +3,108 @@ import { AlertCircle } from "lucide-react";
 import { useHydraStore } from "@/lib/hydra-store";
 import { cn } from "@/lib/utils";
 
+// Define a tag personalizada para o TypeScript não reclamar
+declare module "react" {
+  namespace JSX {
+    interface IntrinsicElements {
+      "radix-connect-button": React.DetailedHTMLProps<
+        React.HTMLAttributes<HTMLElement>,
+        HTMLElement
+      >;
+    }
+  }
+}
+
 type ConnectButtonProps = ComponentProps<"div"> & {
   showError?: boolean;
   fullWidth?: boolean;
 };
 
 export function ClientConnectButton(props: ConnectButtonProps) {
-  const { wallet } = useHydraStore();
+  const { connectError } = useHydraStore();
   const [mounted, setMounted] = useState(false);
-  const [connectError, setConnectError] = useState<string | null>(null);
   const { showError = true, fullWidth = false, className, ...rest } = props;
 
   useEffect(() => {
+    // 1. Marca como montado para renderizar o botão
     setMounted(true);
+
+    // 2. Inicializa o Toolkit do Radix silenciosamente no fundo apenas no navegador
+    // O Web Component <radix-connect-button /> ganha vida imediatamente após isso.
+    let rdtInstance: any = null;
+    let unsub: any = null;
+
+    const initRadix = async () => {
+      try {
+        const { RadixDappToolkit, DataRequestBuilder, RadixNetwork } = await import(
+          "@radixdlt/radix-dapp-toolkit"
+        );
+        
+        const dAppAddress =
+          (import.meta as any).env?.VITE_RADIX_DAPP_DEFINITION_ADDRESS ||
+          "account_rdx129mjzn6j04zy5c7jq447y6r60485z7sd3zvqxah0jfv70k36en8vt9";
+
+        rdtInstance = RadixDappToolkit({
+          dAppDefinitionAddress: dAppAddress,
+          networkId: RadixNetwork.Mainnet,
+          applicationName: "HydraTrack",
+          applicationVersion: "1.0.0",
+        });
+
+        rdtInstance.walletApi.setRequestData(DataRequestBuilder.accounts().exactly(1));
+
+        // Sincroniza a conta conectada (se houver) com o nosso localStorage
+        unsub = rdtInstance.walletApi.walletData$.subscribe((data: any) => {
+          const address = data?.accounts?.[0]?.address ?? null;
+          if (address) {
+            localStorage.setItem("hydratrack:wallet", address);
+          } else {
+            localStorage.removeItem("hydratrack:wallet");
+          }
+          window.dispatchEvent(new Event("hydratrack:wallet-changed"));
+        });
+
+      } catch (error) {
+        console.error("Erro ao inicializar o Radix:", error);
+      }
+    };
+
+    initRadix();
+
+    return () => {
+      if (unsub && typeof unsub.unsubscribe === "function") {
+        unsub.unsubscribe();
+      }
+      if (rdtInstance && typeof rdtInstance.destroy === "function") {
+        rdtInstance.destroy();
+      }
+    };
   }, []);
 
-  if (!mounted) return null;
+  if (!mounted) {
+    return (
+      <div
+        className={cn(
+          "h-[42px] min-w-[140px] animate-pulse rounded-md bg-secondary/50",
+          fullWidth && "w-full",
+          className
+        )}
+      />
+    );
+  }
 
   return (
     <div
       className={cn(
         "flex flex-col gap-2",
         fullWidth ? "w-full items-stretch" : "items-center",
-        className,
+        className
       )}
       {...rest}
     >
-      {wallet ? (
-        <div className="rounded-md border border-border bg-secondary/60 px-3 py-2 text-sm">
-          Wallet connected
-        </div>
-      ) : (
-        <button
-          type="button"
-          className="rounded-md border border-border bg-secondary/60 px-3 py-2 text-sm"
-          onClick={async () => {
-            setConnectError(null);
-            try {
-              const { RadixDappToolkit, DataRequestBuilder, RadixNetwork } = await import("@radixdlt/radix-dapp-toolkit");
-              const connector = RadixDappToolkit({
-                dAppDefinitionAddress:
-                  "account_rdx129mjzn6j04zy5c7jq447y6r60485z7sd3zvqxah0jfv70k36en8vt9",
-                networkId: RadixNetwork.Mainnet,
-                applicationName: "HydraTrack",
-                applicationVersion: "1.0.0",
-              });
-              connector.walletApi.setRequestData(DataRequestBuilder.accounts().exactly(1));
-              const result = await connector.walletApi.sendRequest();
-              if (result.isErr()) {
-                const err = result.error as { error?: string; message?: string } | undefined;
-                setConnectError(err?.message || err?.error || "Wallet request was cancelled.");
-                return;
-              }
-              const address = result.value?.accounts?.[0]?.address ?? null;
-              if (address) localStorage.setItem("hydratrack:wallet", address);
-              window.dispatchEvent(new Event("hydratrack:wallet-changed"));
-            } catch (error) {
-              setConnectError(error instanceof Error ? error.message : "Could not connect wallet.");
-            }
-          }}
-        >
-          Connect Wallet
-        </button>
-      )}
+      {/* O Web Component NATIVO da Radix - Ele cria o botão com o layout e dropdown oficiais */}
+      <radix-connect-button />
+      
       {showError && connectError && (
         <p className="inline-flex items-center gap-1.5 text-xs text-destructive">
           <AlertCircle className="h-3.5 w-3.5" />
