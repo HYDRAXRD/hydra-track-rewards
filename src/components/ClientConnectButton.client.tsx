@@ -75,9 +75,6 @@ export function ClientConnectButton(props: ConnectButtonProps) {
       if (unsub && typeof unsub.unsubscribe === "function") {
         unsub.unsubscribe();
       }
-      if (rdtInstance && typeof rdtInstance.destroy === "function") {
-        rdtInstance.destroy();
-      }
     };
   }, []);
 
