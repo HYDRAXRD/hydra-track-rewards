@@ -151,7 +151,7 @@ CALL_METHOD
         <div className="flex items-center gap-2">
           {pendingCount > 0 && <Badge className="bg-yellow-300/20 text-yellow-300 border-yellow-300/30">{pendingCount} pending</Badge>}
           <Button size="sm" variant="outline" onClick={refresh}>Refresh</Button>
-          <Button size="sm" variant="outline" onClick={() => { setAdminSecret(""); setSecretInput(""); setUnlocked(false); }}>Lock</Button>
+          
         </div>
       </div>
       {txError && <div className="flex items-start gap-2 rounded-lg border border-red-500/40 bg-red-500/10 p-3"><AlertTriangle className="h-4 w-4 text-red-400 mt-0.5 shrink-0" /><p className="text-xs text-red-300">{txError}</p></div>}
