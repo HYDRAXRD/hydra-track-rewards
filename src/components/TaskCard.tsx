@@ -52,34 +52,41 @@ export function TaskCard({ task }: { task: Task }) {
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
-  const handleSubmit = async () => {
-    if (!wallet) return;
-    setSubmitError(null);
-    if (needsInput) {
-      if (needsScreenshot && !screenshot) return;
-      if ((needsTxid || isSocialManual) && !handle.trim()) return;
-      setSubmitting(true);
+ const handleSubmit = async () => {
+  if (!wallet) return;
+  setSubmitError(null);
+  if (needsInput) {
+    if (needsScreenshot && !screenshot) return;
+    if ((needsTxid || isSocialManual) && !handle.trim()) return;
+    setSubmitting(true);
+    try {
       const result = await submitForReview(
         task.id,
         needsScreenshot ? (screenshotName || "screenshot") : handle.trim(),
         needsScreenshot ? screenshot : undefined,
       );
-      setSubmitting(false);
       if (result.ok) {
         setPopup("pending");
         setTimeout(() => setPopup(null), 1600);
       } else {
         setSubmitError(result.error ?? "Could not save your submission. Please try again.");
       }
-      return;
-    }
-    setSubmitting(true);
-    setTimeout(() => {
+    } catch (err) {
+      setSubmitError(
+        err instanceof Error ? err.message : "Unexpected error while saving your submission.",
+      );
+    } finally {
       setSubmitting(false);
-      completeTask(task.id);
-      setPopup("done");
-      setTimeout(() => setPopup(null), 1400);
-    }, 1200);
+    }
+    return;
+  }
+  setSubmitting(true);
+  setTimeout(() => {
+    setSubmitting(false);
+    completeTask(task.id);
+    setPopup("done");
+    setTimeout(() => setPopup(null), 1400);
+  }, 1200);
   };
 
   const canSubmit = wallet && !submitting && (
