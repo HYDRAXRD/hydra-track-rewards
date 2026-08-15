@@ -81,12 +81,7 @@ export function AdminPanel({ adminWallet }: { adminWallet: string }) {
   }, []);
 
   useEffect(() => {
-    if (getAdminSecret()) {
-      setUnlocked(true);
-      void refresh();
-    } else {
-      setLoading(false);
-    }
+    void refresh();
   }, [refresh]);
 
   const updateSubmissionStatus = async (walletAddress: string, taskId: string, status: "approved" | "rejected") => {
