@@ -14,15 +14,12 @@ const taskIdSchema = z.string().trim().min(1).max(80);
 
 const adminSchema = z.object({
   adminWallet: walletSchema,
-  adminSecret: z.string().min(1).max(512),
+  adminSecret: z.string().max(512).optional().default(""),
 });
 
-// Returns false instead of throwing: a thrown error crosses the RPC boundary
-// as an unhandled runtime error and blanks the page.
-function isAdmin(input: { adminWallet: string; adminSecret: string }) {
-  const secret = process.env["ADMIN_PANEL_SECRET"];
-  if (!secret) return false;
-  return input.adminWallet === ADMIN_WALLET && input.adminSecret === secret;
+// A chave de admin foi removida: o acesso é concedido apenas à carteira admin.
+function isAdmin(input: { adminWallet: string }) {
+  return input.adminWallet === ADMIN_WALLET;
 }
 
 const NOT_AUTHORIZED = { ok: false as const, error: "Not authorized." };
