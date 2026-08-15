@@ -18,10 +18,16 @@ zone_name = "hydraxrd.com"
 pattern = "www.hydraxrd.com/track"
 zone_name = "hydraxrd.com"
 
+# Public / non-secret vars (safe to commit)
 [vars]
-SUPABASE_PROJECT_ID = "agynbpcazpcfubzuoncg"
+SUPABASE_PROJECT_ID = "rrwjawaziommwsuhfoka"
 SUPABASE_PUBLISHABLE_KEY = "sb_publishable_H6BWRM7XQMoNtFJOhTkJTg_VzItB9t2"
-SUPABASE_URL = "https://agynbpcazpcfubzuoncg.supabase.co"
-VITE_SUPABASE_PROJECT_ID = "agynbpcazpcfubzuoncg"
+SUPABASE_URL = "https://rrwjawaziommwsuhfoka.supabase.co"
+VITE_SUPABASE_PROJECT_ID = "rrwjawaziommwsuhfoka"
 VITE_SUPABASE_PUBLISHABLE_KEY = "sb_publishable_H6BWRM7XQMoNtFJOhTkJTg_VzItB9t2"
-VITE_SUPABASE_URL = "https://agynbpcazpcfubzuoncg.supabase.co"
+VITE_SUPABASE_URL = "https://rrwjawaziommwsuhfoka.supabase.co"
+
+# SECRET – SUPABASE_SERVICE_ROLE_KEY must NOT be in [vars] (plaintext).
+# Set it as an encrypted Cloudflare Workers secret:
+#   wrangler secret put SUPABASE_SERVICE_ROLE_KEY
+# then paste the service_role key from Supabase > Project Settings > API.
