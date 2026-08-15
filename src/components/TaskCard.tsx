@@ -23,6 +23,7 @@ export function TaskCard({ task }: { task: Task }) {
   const [screenshot, setScreenshot] = useState<string | undefined>(undefined);
   const [screenshotName, setScreenshotName] = useState("");
   const [popup, setPopup] = useState<null | "pending" | "done">(null);
+  const [submitError, setSubmitError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const Icon = task.icon;
 
@@ -51,22 +52,25 @@ export function TaskCard({ task }: { task: Task }) {
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!wallet) return;
+    setSubmitError(null);
     if (needsInput) {
       if (needsScreenshot && !screenshot) return;
       if ((needsTxid || isSocialManual) && !handle.trim()) return;
       setSubmitting(true);
-      setTimeout(() => {
-        submitForReview(
-          task.id,
-          needsScreenshot ? (screenshotName || "screenshot") : handle.trim(),
-          needsScreenshot ? screenshot : undefined,
-        );
-        setSubmitting(false);
+      const result = await submitForReview(
+        task.id,
+        needsScreenshot ? (screenshotName || "screenshot") : handle.trim(),
+        needsScreenshot ? screenshot : undefined,
+      );
+      setSubmitting(false);
+      if (result.ok) {
         setPopup("pending");
         setTimeout(() => setPopup(null), 1600);
-      }, 600);
+      } else {
+        setSubmitError(result.error ?? "Could not save your submission. Please try again.");
+      }
       return;
     }
     setSubmitting(true);
@@ -238,6 +242,12 @@ export function TaskCard({ task }: { task: Task }) {
             </p>
           )}
         </div>
+      )}
+
+      {submitError && (
+        <p role="alert" className="text-xs text-red-400">
+          {submitError}
+        </p>
       )}
 
       <div className="flex items-center justify-between mt-auto pt-2">
