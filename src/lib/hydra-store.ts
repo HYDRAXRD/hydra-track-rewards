@@ -390,19 +390,20 @@ export function useHydraStore() {
     });
   }, []);
 
-  const submitForReview = useCallback((taskId: string, handle: string, screenshot?: string) => {
-    if (!wallet) return;
-    // Optimistic local state
+  const submitForReview = useCallback(async (taskId: string, handle: string, screenshot?: string) => {
+    if (!wallet) return { ok: false, error: "Connect your wallet first." };
+
+    const { upsertSubmission } = await import("./hydra-db");
+    const result = await upsertSubmission({ walletAddress: wallet, taskId, handle, screenshot });
+    if (!result.ok) return result;
+
+    const submission = { handle, screenshot, at: Date.now(), walletAddress: wallet };
     setPending((prev) => {
-      const next = { ...prev, [taskId]: { handle, screenshot, at: Date.now(), walletAddress: wallet } };
+      const next = { ...prev, [taskId]: submission };
       localStorage.setItem(PENDING_KEY, JSON.stringify(next));
       return next;
     });
-    // Persist to the shared cloud database so the admin sees it from any device
-    void (async () => {
-      const { upsertSubmission } = await import("./hydra-db");
-      await upsertSubmission({ walletAddress: wallet, taskId, handle, screenshot });
-    })();
+    return { ok: true };
   }, [wallet]);
 
 
