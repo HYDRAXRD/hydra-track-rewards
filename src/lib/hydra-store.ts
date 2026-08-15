@@ -391,8 +391,9 @@ export function useHydraStore() {
   }, []);
 
   const submitForReview = useCallback(async (taskId: string, handle: string, screenshot?: string) => {
-    if (!wallet) return { ok: false, error: "Connect your wallet first." };
+  if (!wallet) return { ok: false, error: "Connect your wallet first." };
 
+  try {
     const { upsertSubmission } = await import("./hydra-db");
     const result = await upsertSubmission({ walletAddress: wallet, taskId, handle, screenshot });
     if (!result.ok) return result;
@@ -400,11 +401,18 @@ export function useHydraStore() {
     const submission = { handle, screenshot, at: Date.now(), walletAddress: wallet };
     setPending((prev) => {
       const next = { ...prev, [taskId]: submission };
-      localStorage.setItem(PENDING_KEY, JSON.stringify(next));
+      try {
+        localStorage.setItem(PENDING_KEY, JSON.stringify(next));
+      } catch {
+        // localStorage pode falhar (quota excedida com screenshot grande) mas o estado em memória segue válido
+      }
       return next;
     });
     return { ok: true };
-  }, [wallet]);
+  } catch (err) {
+    return { ok: false, error: err instanceof Error ? err.message : "Failed to submit for review." };
+  }
+}, [wallet]);
 
 
   const allTasks = useAllTasks();
