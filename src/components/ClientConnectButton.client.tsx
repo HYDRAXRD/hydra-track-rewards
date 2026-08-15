@@ -18,12 +18,13 @@ declare module "react" {
 type ConnectButtonProps = ComponentProps<"div"> & {
   showError?: boolean;
   fullWidth?: boolean;
+  size?: "sm" | "default" | "lg";
 };
 
 export function ClientConnectButton(props: ConnectButtonProps) {
-  const { connectError } = useHydraStore();
+  const connectError = (useHydraStore() as { connectError?: string | null }).connectError ?? null;
   const [mounted, setMounted] = useState(false);
-  const { showError = true, fullWidth = false, className, ...rest } = props;
+  const { showError = true, fullWidth = false, className, size: _size, ...rest } = props;
 
   useEffect(() => {
     // 1. Marca como montado para renderizar o botão
