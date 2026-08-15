@@ -12,8 +12,8 @@ export function AdminPanel(props: AdminPanelProps) {
 
   useEffect(() => {
     setMounted(true);
-    void loadPanel().then((mod) => {
-      setPanel(() => mod);
+    void Promise.resolve(loadPanel()).then((mod) => {
+      if (mod) setPanel(() => mod);
     });
   }, [loadPanel]);
 

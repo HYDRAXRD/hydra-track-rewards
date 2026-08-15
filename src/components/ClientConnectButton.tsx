@@ -5,6 +5,7 @@ import { cn } from "@/lib/utils";
 type ConnectButtonProps = ComponentProps<"div"> & {
   showError?: boolean;
   fullWidth?: boolean;
+  size?: "sm" | "default" | "lg";
 };
 
 export function ClientConnectButton(props: ConnectButtonProps) {
@@ -23,7 +24,7 @@ export function ClientConnectButton(props: ConnectButtonProps) {
 
   useEffect(() => {
     setMounted(true);
-    void loadButton().then((mod) => {
+    void Promise.resolve(loadButton()).then((mod) => {
       if (mod) setButton(() => mod);
     });
   }, [loadButton]);

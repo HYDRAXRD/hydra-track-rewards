@@ -2,7 +2,6 @@ import { useState, useCallback, useEffect } from "react";
 import { Check, X, ShieldCheck, Loader2, User, ChevronDown, ChevronUp, ExternalLink, Send, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
 import {
   getAllTasks,
   setCustomTaskCache,
@@ -14,9 +13,6 @@ import {
   fetchCustomTasks,
   setSubmissionStatus,
   recordPayout,
-  setAdminSecret,
-  getAdminSecret,
-  verifyAdminSecret,
 } from "@/lib/hydra-db";
 import { cn } from "@/lib/utils";
 
@@ -60,10 +56,6 @@ export function AdminPanel({ adminWallet }: { adminWallet: string }) {
   const [txError, setTxError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [selectedScreenshot, setSelectedScreenshot] = useState<string | null>(null);
-  const [unlocked, setUnlocked] = useState(false);
-  const [secretInput, setSecretInput] = useState("");
-  const [secretError, setSecretError] = useState<string | null>(null);
-  const [checkingSecret, setCheckingSecret] = useState(false);
 
   const refresh = useCallback(async () => {
     setLoading(true);
@@ -81,12 +73,7 @@ export function AdminPanel({ adminWallet }: { adminWallet: string }) {
   }, []);
 
   useEffect(() => {
-    if (getAdminSecret()) {
-      setUnlocked(true);
-      void refresh();
-    } else {
-      setLoading(false);
-    }
+    void refresh();
   }, [refresh]);
 
   const updateSubmissionStatus = async (walletAddress: string, taskId: string, status: "approved" | "rejected") => {
@@ -150,33 +137,6 @@ CALL_METHOD
   const groups = groupByParticipant(submissions);
   const pendingCount = submissions.filter((s) => s.status === "pending").length;
 
-  if (!unlocked) {
-    return (
-      <div className="glass-card rounded-2xl p-6 flex flex-col gap-4 max-w-md">
-        <div className="flex items-center gap-3">
-          <div className="grid h-10 w-10 place-items-center rounded-xl bg-teal/20"><ShieldCheck className="h-5 w-5" style={{ color: "oklch(0.85 0.15 195)" }} /></div>
-          <div>
-            <h2 className="font-bold text-lg">Admin access</h2>
-            <p className="text-xs text-muted-foreground">Enter the admin key to review submissions and send rewards.</p>
-          </div>
-        </div>
-        <Input type="password" value={secretInput} onChange={(e) => setSecretInput(e.target.value)} placeholder="Admin key" />
-        <Button className="btn-gradient btn-gradient-hover border-0" disabled={!secretInput.trim() || checkingSecret} onClick={async () => {
-          setSecretError(null);
-          setCheckingSecret(true);
-          const ok = await verifyAdminSecret(secretInput.trim());
-          setCheckingSecret(false);
-          if (!ok) return void setSecretError("Invalid admin key for this wallet.");
-          setAdminSecret(secretInput.trim());
-          setUnlocked(true);
-          void refresh();
-        }}>
-          {checkingSecret ? "Checking…" : "Unlock admin panel"}
-        </Button>
-        {secretError && <p className="text-xs text-red-400">{secretError}</p>}
-      </div>
-    );
-  }
 
   return (
     <div className="glass-card rounded-2xl p-6 flex flex-col gap-6">
@@ -191,7 +151,7 @@ CALL_METHOD
         <div className="flex items-center gap-2">
           {pendingCount > 0 && <Badge className="bg-yellow-300/20 text-yellow-300 border-yellow-300/30">{pendingCount} pending</Badge>}
           <Button size="sm" variant="outline" onClick={refresh}>Refresh</Button>
-          <Button size="sm" variant="outline" onClick={() => { setAdminSecret(""); setSecretInput(""); setUnlocked(false); }}>Lock</Button>
+          
         </div>
       </div>
       {txError && <div className="flex items-start gap-2 rounded-lg border border-red-500/40 bg-red-500/10 p-3"><AlertTriangle className="h-4 w-4 text-red-400 mt-0.5 shrink-0" /><p className="text-xs text-red-300">{txError}</p></div>}
